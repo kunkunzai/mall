@@ -1,4 +1,4 @@
-package com.lk.mall.orders.model.response;
+package com.lk.mall.cart.model.response;
 
 import java.math.BigDecimal;
 

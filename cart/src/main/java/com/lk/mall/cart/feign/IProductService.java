@@ -1,4 +1,4 @@
-package com.lk.mall.orders.feign;
+package com.lk.mall.cart.feign;
 
 import java.util.List;
 
@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.lk.mall.orders.model.response.ProductServiceResponse;
+import com.lk.mall.cart.model.response.ProductServiceResponse;
+
 
 @FeignClient(value = "service-product")
 public interface IProductService {

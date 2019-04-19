@@ -47,6 +47,6 @@ public class GlobalExceptionHandler {
 			IOUtils.close(out);
 		}
 		return null;
-	}
+	};
 
 }

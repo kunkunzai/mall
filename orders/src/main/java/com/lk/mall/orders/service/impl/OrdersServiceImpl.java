@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -71,9 +70,9 @@ public class OrdersServiceImpl implements IOrdersService {
 
 	// 调用product服务得到product详情
 	private List<ProductServiceResponse> getProductServiceResponse(Orders orders) {
-		StringJoiner sj = new StringJoiner(",");
-		orders.getOrderItemList().stream().forEach(x -> sj.add(x.getProductId().toString()));
-		List<ProductServiceResponse> productList = productService.findAllByProductId(sj.toString());
+		List<Long> list = new ArrayList<>();
+		orders.getOrderItemList().stream().forEach(x -> list.add(x.getProductId()));
+		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 		return productList;
 	}
@@ -88,8 +87,7 @@ public class OrdersServiceImpl implements IOrdersService {
 					y.setProductSubtitle(x.getDescription());
 					y.setProductType(x.getType());
 					y.setShopId(x.getShopId());
-//					y.setShopName(x.get);
-//					y.setShopType(x.getsh);
+					y.setShopName(x.getShopName());
 				}
 			});
 		});
@@ -204,7 +202,7 @@ public class OrdersServiceImpl implements IOrdersService {
 	private void populateSettlementVO(SettlementVO settlementVO, List<ProductServiceResponse> productServiceResponse) {
 
 		settlementVO.getShopList().forEach(x -> {
-			x.getItemList().forEach(y -> {
+			x.getProductList().forEach(y -> {
 				productServiceResponse.forEach(z -> {
 					if (y.getProductId() == z.getId()) {
 						y.setProductImage(z.getSmallImage());
@@ -212,7 +210,7 @@ public class OrdersServiceImpl implements IOrdersService {
 						y.setProductName(z.getName());
 						y.setProductSubtitle(z.getDescription());
 						y.setProductType(z.getType());
-						y.setTotalMoney(y.getItemAllMoney());
+						y.setTotalMoney(y.getProductAllMoney());
 					}
 				});
 			});
@@ -222,9 +220,9 @@ public class OrdersServiceImpl implements IOrdersService {
 	}
 
 	private List<ProductServiceResponse> getProductServiceResponse(SettlementVO settlementVO) {
-		StringJoiner sj = new StringJoiner(",");
-		settlementVO.getShopList().forEach(x -> x.getItemList().forEach(y -> sj.add(y.getProductId().toString())));
-		List<ProductServiceResponse> productList = productService.findAllByProductId(sj.toString());
+		List<Long> list = new ArrayList<>();
+		settlementVO.getShopList().forEach(x -> x.getProductList().forEach(y -> list.add(y.getProductId())));
+		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 		System.out.println(productList.toString());
 		return productList;

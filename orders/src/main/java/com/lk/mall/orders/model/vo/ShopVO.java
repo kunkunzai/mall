@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import javax.persistence.Embedded;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import lombok.Data;
 import lombok.ToString;
@@ -11,17 +13,20 @@ import lombok.ToString;
 @Data
 @ToString
 public class ShopVO {
+	
+	@NotNull(message="店铺id不能为空")
 	private Long shopId;
 	private String shopName;
 	private Integer shopType;
 	private BigDecimal totalMoney;
 	@Embedded
-	private List<ProductVO> itemList;
+	@NotEmpty(message = "商品明细不能为空")
+	private List<ProductVO> productList;
 	
 	public BigDecimal getShopMoney() {
 		BigDecimal b = BigDecimal.ZERO;
-		for (ProductVO itemVO : itemList) {
-			b = b.add(itemVO.getItemAllMoney());
+		for (ProductVO itemVO : productList) {
+			b = b.add(itemVO.getProductAllMoney());
 		}
 		return b;
 	}

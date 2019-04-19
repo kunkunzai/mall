@@ -48,12 +48,12 @@ public class OrderController {
 		Orders orders = mapper.map(ordersVO, Orders.class);
 		List<OrderItem> orderItemList = new ArrayList<>();
 		ordersVO.getShopList().forEach(x -> {
-			x.getItemList().stream().forEach(y -> {
+			x.getProductList().stream().forEach(y -> {
 				orderItemList.add(mapper.map(y, OrderItem.class));
 			});
 		});
 		orders.setOrderItemList(orderItemList);
-		if (orders.getOrderItemSize() == 1) {
+		if (ordersVO.getShopList().size() == 1) {
 			orders.setSplitFlag(100);
 		} else {
 			orders.setSplitFlag(200);
