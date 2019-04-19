@@ -85,7 +85,7 @@ public class OrderController {
 	public Page<Orders> findByUserId(
 			@RequestParam("userId") Long userId, 
 			@RequestParam("status") Integer status,
-			@RequestParam(value = "page", defaultValue = "1") Integer page,
+			@RequestParam(value = "page", defaultValue = "0") Integer page,
 			@RequestParam(value = "size", defaultValue = "2") Integer size) {
 
 		return ordersService.findByUserId(userId, status, page, size);

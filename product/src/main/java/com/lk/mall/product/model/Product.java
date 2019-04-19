@@ -1,7 +1,7 @@
 package com.lk.mall.product.model;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
-@Table(name = "item")
+@Table(name = "product")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -37,7 +37,7 @@ public class Product {
 	private String description;
 	private String currentItem;
 	private String relevantItem;
-	private Timestamp createTime;
-	private Timestamp updateTime;
+	private LocalDateTime createTime;
+	private LocalDateTime updateTime;
 
 }

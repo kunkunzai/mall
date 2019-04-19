@@ -1,5 +1,6 @@
 package com.lk.mall.product.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ public class IProductServiceImpl implements IProductService {
 	@Override
 	public Product save(Product product) {
 		product.setStatus(0);
+		product.setCreateTime(LocalDateTime.now());
 		return productDao.save(product);
 	}
 

@@ -41,7 +41,7 @@ public class ProductController {
 	@RequestMapping("/findProductByShopId")
 	public Page<Product> findproductByShopId(
 			@RequestParam(value = "shopId") Long shopId,
-			@RequestParam(value = "page", defaultValue = "1") Integer page,
+			@RequestParam(value = "page", defaultValue = "0") Integer page,
 			@RequestParam(value = "size", defaultValue = "2") Integer size) {
 		return productService.findByShopId(shopId, 1, page, size);
 	}

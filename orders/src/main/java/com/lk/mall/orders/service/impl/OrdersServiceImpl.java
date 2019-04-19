@@ -96,45 +96,34 @@ public class OrdersServiceImpl implements IOrdersService {
 	}
 
 //	验证前端传来金额和后端计算的金额是否一致
-	private void verifyAmount(Orders orders, List<ProductServiceResponse> productServiceResponse) {
-		BigDecimal expectantTotalPrice = BigDecimal.ZERO;
-//		Stream<OrderItem> orderItemList = orders.getOrderItemList().stream();
-//		ProductServiceResponse.stream().forEach(x -> {
-//			orderItemList.forEach(y -> {
-//				if (x.getId() == y.getProductId()) {
-//					if (x.getSalePrice().compareTo(y.getTotalMoney()) != 0) {
-//						// throw new IllegalPriceException();
-//						System.err.println("金额错误|期盼的金额：" + y.getTotalMoney() + ",实际的价格：" + x.getSalePrice());
-//						expectantTotalPrice.add(y.getTotalMoney().multiply(BigDecimal.valueOf(y.getQuantity())));
-//					}
-//				}
-//			});
-//		});
-		for (ProductServiceResponse product : productServiceResponse) {
-			for (OrderItem orderItem : orders.getOrderItemList()) {
-				if (product.getId() == orderItem.getProductId()) {
-					if (product.getSalePrice().compareTo(orderItem.getProductMoney()) != 0) {
-						throw new IllegalPriceException(product.getSalePrice(), orderItem.getProductMoney());
-					}
-					expectantTotalPrice = expectantTotalPrice
-							.add(orderItem.getProductMoney().multiply(BigDecimal.valueOf(orderItem.getQuantity())));
-				}
-			}
-		}
-		if (orders.getOrderMoney().compareTo(expectantTotalPrice) != 0) {
-			throw new IllegalPriceException(expectantTotalPrice, orders.getOrderMoney());
-		}
-	}
+    private void verifyAmount(Orders orders, List<ProductServiceResponse> productServiceResponse) {
+        BigDecimal expectantTotalPrice = BigDecimal.ZERO;
+        for (ProductServiceResponse product : productServiceResponse) {
+            for (OrderItem orderItem : orders.getOrderItemList()) {
+                if (product.getId() == orderItem.getProductId()) {
+                    if (product.getSalePrice().compareTo(orderItem.getProductMoney()) != 0) {
+                        System.err.println("商品:" + product.getId() + " 期盼的金额：" + product.getSalePrice() + ",实际的价格："+ orderItem.getProductMoney());
+                        throw new IllegalPriceException(product.getSalePrice(), orderItem.getProductMoney());
+                    }
+                    expectantTotalPrice = expectantTotalPrice.add(orderItem.getProductMoney().multiply(BigDecimal.valueOf(orderItem.getQuantity())));
+                }
+            }
+        }
+        if (orders.getOrderMoney().compareTo(expectantTotalPrice) != 0) {
+            System.err.println("期盼的总金额：" + expectantTotalPrice + ",实际的总价格：" + orders.getOrderMoney());
+            throw new IllegalPriceException(expectantTotalPrice, orders.getOrderMoney());
+        }
+    }
 
 //	创建预支付信息
 	private void createPreparePayment(Orders orders) {
-		orders.setIsDelete(1);
-		orders.setOrderStatus(5);
+
 	}
 
 //	将剩余没填充的信息填充进order
 	private void resolveOrder(Orders orders) {
-
+		orders.setIsDelete(1);
+		orders.setOrderStatus(5);
 	}
 
 	@Override
@@ -170,7 +159,11 @@ public class OrdersServiceImpl implements IOrdersService {
 				CriteriaBuilder.In<Object> in = criteriaBuilder.in(root.get("splitFlag"));
 				in.value(100);
 				in.value(200);
-				query.where(criteriaBuilder.and(p1, p2, in));
+				if (status == 0) {
+					query.where(criteriaBuilder.and(p1, in));
+				} else {
+					query.where(criteriaBuilder.and(p1, p2, in));
+				}
 			} else {
 				Predicate p3 = criteriaBuilder.equal(root.get("splitFlag").as(Integer.class), 100);
 				query.where(criteriaBuilder.and(p1, p2, p3));
