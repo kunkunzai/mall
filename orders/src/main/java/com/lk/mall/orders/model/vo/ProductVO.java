@@ -21,7 +21,7 @@ public class ProductVO{
 	private Integer productType;
 	private String orderItemsDesc;
 	
-	public BigDecimal getItemAllMoney() {
+	public BigDecimal getProductAllMoney() {
 		return productMoney.multiply(new BigDecimal(quantity));
 	}
 	

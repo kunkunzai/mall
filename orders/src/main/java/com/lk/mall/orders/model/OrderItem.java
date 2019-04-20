@@ -10,6 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +27,7 @@ public class OrderItem{
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@JsonIgnore
 	private Long id;
 	private String orderId;
 	private Long productId;
@@ -40,6 +43,8 @@ public class OrderItem{
 	private String shopName;
 	private Integer shopType;
 	private String orderItemsDesc;
+	@JsonIgnore
 	private LocalDateTime createTime;
+	@JsonIgnore
 	private LocalDateTime updateTime;
 }

@@ -16,12 +16,12 @@ public class ShopVO {
 	private Integer shopType;
 	private BigDecimal totalMoney;
 	@Embedded
-	private List<ProductVO> itemList;
+	private List<ProductVO> productList;
 	
 	public BigDecimal getShopMoney() {
 		BigDecimal b = BigDecimal.ZERO;
-		for (ProductVO itemVO : itemList) {
-			b = b.add(itemVO.getItemAllMoney());
+		for (ProductVO itemVO : productList) {
+			b = b.add(itemVO.getProductAllMoney());
 		}
 		return b;
 	}

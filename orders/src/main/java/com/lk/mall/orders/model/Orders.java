@@ -16,6 +16,8 @@ import javax.persistence.Table;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,9 +33,12 @@ public class Orders {
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@JsonIgnore
 	private Long id;
+	@JsonIgnore
 	private String parentOrderId;
 	private String orderId;
+	@JsonIgnore
 	private Integer orderWay;
 	private Integer orderStatus;
 	private String orderDesc;
@@ -49,17 +54,22 @@ public class Orders {
 	private String tradeId;
 	private String address;
 	private String zipCode;
+	@JsonIgnore
 	private Integer splitFlag;
+	@JsonIgnore
 	private LocalDateTime proCycleTime;
 //	private LocalDateTime proCycleTimeE;
 	private Timestamp userReceiveTime;
 	private String logisticsCompany;
 	private String logisticsCompanyCode;
 	private String logisticsNo;
+	@JsonIgnore
 	private Integer isDelete;
 	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@JsonIgnore
 	private LocalDateTime createTime;
 	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@JsonIgnore
 	private LocalDateTime updateTime;
 	@Embedded
 	private List<OrderItem> orderItemList;

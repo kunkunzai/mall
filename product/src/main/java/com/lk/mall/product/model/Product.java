@@ -10,6 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,9 +37,13 @@ public class Product {
 	private BigDecimal originalPrice;
 	private BigDecimal salePrice;
 	private String description;
+	@JsonIgnore
 	private String currentItem;
+	@JsonIgnore
 	private String relevantItem;
+	@JsonIgnore
 	private LocalDateTime createTime;
+	@JsonIgnore
 	private LocalDateTime updateTime;
 
 }

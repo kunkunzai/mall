@@ -204,7 +204,7 @@ public class OrdersServiceImpl implements IOrdersService {
 	private void populateSettlementVO(SettlementVO settlementVO, List<ProductServiceResponse> productServiceResponse) {
 
 		settlementVO.getShopList().forEach(x -> {
-			x.getItemList().forEach(y -> {
+			x.getProductList().forEach(y -> {
 				productServiceResponse.forEach(z -> {
 					if (y.getProductId() == z.getId()) {
 						y.setProductImage(z.getSmallImage());
@@ -212,7 +212,7 @@ public class OrdersServiceImpl implements IOrdersService {
 						y.setProductName(z.getName());
 						y.setProductSubtitle(z.getDescription());
 						y.setProductType(z.getType());
-						y.setTotalMoney(y.getItemAllMoney());
+						y.setTotalMoney(y.getProductAllMoney());
 					}
 				});
 			});
@@ -223,7 +223,7 @@ public class OrdersServiceImpl implements IOrdersService {
 
 	private List<ProductServiceResponse> getProductServiceResponse(SettlementVO settlementVO) {
 		StringJoiner sj = new StringJoiner(",");
-		settlementVO.getShopList().forEach(x -> x.getItemList().forEach(y -> sj.add(y.getProductId().toString())));
+		settlementVO.getShopList().forEach(x -> x.getProductList().forEach(y -> sj.add(y.getProductId().toString())));
 		List<ProductServiceResponse> productList = productService.findAllByProductId(sj.toString());
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 		System.out.println(productList.toString());
