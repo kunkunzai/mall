@@ -38,7 +38,11 @@ public class ShopCart implements Serializable, Cloneable {
     public BigDecimal getShopMoney() {
         BigDecimal b = BigDecimal.ZERO;
         for (ProductCart productCart : productList) {
-            b = b.add(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
+            BigDecimal productMoney = BigDecimal.ZERO;
+            if (null != productCart.getProductMoney()) {
+                productMoney = productCart.getProductMoney();
+            }
+            b = b.add(productMoney.multiply(new BigDecimal(productCart.getQuantity())));
         }
         return b;
     }
