@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -20,7 +18,6 @@ public class ShopCart implements Serializable, Cloneable {
 	private Long shopId;
 //	private String shopName;
 	private List<ProductCart> productList;
-	@JsonIgnore
 	private Boolean isAll;
 	
 	

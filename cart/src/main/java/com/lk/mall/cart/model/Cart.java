@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -18,7 +16,6 @@ public class Cart implements Serializable, Cloneable {
 	private static final long serialVersionUID = -5510967080302695103L;
 
 	private List<ShopCart> shopList;
-	@JsonIgnore
 	private Boolean isAll;
 	
 	public Cart(List<ShopCart> shopList, Boolean isAll) {
