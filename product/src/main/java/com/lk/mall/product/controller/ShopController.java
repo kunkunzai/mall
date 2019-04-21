@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lk.mall.product.model.Shop;
-import com.lk.mall.product.model.vo.ShopVO;
 import com.lk.mall.product.service.IShopService;
 
 @RestController
@@ -17,7 +16,7 @@ public class ShopController {
 	private IShopService ShopService;
 
 	@RequestMapping("/findByShopId")
-	public ShopVO findByShopId(@RequestParam("shopId") Long shopId) {
+	public Shop findByShopId(@RequestParam("shopId") Long shopId) {
 		return ShopService.findById(shopId);
 	}
 

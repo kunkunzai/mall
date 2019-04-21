@@ -30,12 +30,8 @@ public class Cart implements Serializable, Cloneable {
     }
     
     
-    public BigDecimal getTotalMoney() {
-        BigDecimal b = BigDecimal.ZERO;
-        for (ShopCart shopCart : shopList) {
-            b = b.add(shopCart.getShopMoney());
-        }
-        return b;
+    public BigDecimal getOrderMoney() {
+        return shopList.stream().map(ShopCart::getShopMoney).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 	
 }

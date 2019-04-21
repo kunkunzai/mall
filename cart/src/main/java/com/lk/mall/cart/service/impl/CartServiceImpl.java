@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,7 @@ public class CartServiceImpl implements ICartService {
 
     @Override
     public Integer addCart(ShopCart newShopCart, String userId) {
-        Cart cart = getCartList(userId);
+        Cart cart = getCartList(userId, false);
         Map<String, Integer> location = getListLocation(cart, newShopCart);
         int status = location.get("status");
         int shopFlag = location.get("shopFlag");
@@ -51,7 +50,7 @@ public class CartServiceImpl implements ICartService {
         if (status == 0) {
             System.out.println("购物车为空");
 //          购物车为空
-            cart = new Cart(Arrays.asList(newShopCart), false);
+            cart = new Cart(Arrays.asList(newShopCart), null);
         } else if (status == 1) {
             System.out.println("购物车没有该商家");
 //          没有该商家任何商品，只需要在列表首位新增一个新的ShopCart即可
@@ -104,7 +103,7 @@ public class CartServiceImpl implements ICartService {
         int shopFlag = 0;
         int productFlag = 0;
         int quantity = 0;
-        if (null == cart.getShopList()) {
+		if (null == cart || null == cart.getShopList() || cart.getShopList().size() == 0) {
 //            status=0,该用户的购物车为空,shopFlag,productFlag,quantity为默认值0
         } else {
 //            status=1,该用户的购物车不为空,不包含该商家,shopFlag,productFlag,quantity为默认值0
@@ -156,7 +155,7 @@ public class CartServiceImpl implements ICartService {
                 }
             });
 //            从服务器拿到购物车列表
-            Cart cartList = getCartList(userId);
+            Cart cartList = getCartList(userId, false);
 //            删除商家
             Iterator<ShopCart> shopCart = cartList.getShopList().iterator();
             while (shopCart.hasNext()) {
@@ -187,46 +186,55 @@ public class CartServiceImpl implements ICartService {
     }
 
     @Override
-    public Cart getCartList(String userId) {
+    public Cart getCartList(String userId, Boolean isPopulate) {
         String cartStr = redisUtil.get(RedisConstant.REDIS_CART_PREFIX + userId);
-        if (null == cartStr || cartStr.length() == 0) {
-            return new Cart();
-        }
+		if (null == cartStr || cartStr.isEmpty()) {
+			return null;
+		}
         Cart cart = JSONObject.parseObject(cartStr, Cart.class);
-        List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(cart);
-        cart.getShopList().forEach(x -> {
-            x.getProductList().forEach(y -> {
-                productServiceResponse.forEach(z -> {
-                    if (y.getProductId() == z.getId()) {
-                        y.setProductImage(z.getSmallImage());
-                        y.setProductMoney(z.getSalePrice());
-                        y.setProductName(z.getName());
-                        y.setSubtitle(z.getDescription());
-                    }
-                });
-            });
-        });
+        if(isPopulate) {
+        	List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(cart);
+        	cart.getShopList().forEach(x -> {
+        		x.getProductList().forEach(y -> {
+        			productServiceResponse.forEach(z -> {
+        				if (y.getProductId() == z.getId()) {
+        					y.setProductImage(z.getSmallImage());
+        					y.setProductMoney(z.getSalePrice());
+        					y.setProductName(z.getName());
+        					y.setSubtitle(z.getDescription());
+        					x.setShopName(z.getShopName());
+        				}
+        			});
+        		});
+        	});
+        }
         return cart;
     }
     
     // 调用product服务得到product详情
-    private List<ProductServiceResponse> getProductServiceResponse(Cart cart) {
-        StringJoiner sj = new StringJoiner(",");
-        cart.getShopList().forEach(x->{
-            x.getProductList().forEach(y->{
-                sj.add(y.getProductId().toString());
-            });
-        });
-        List<ProductServiceResponse> productList = productService.findAllByProductId(sj.toString());
-        Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
-        return productList;
-    }
+	private List<ProductServiceResponse> getProductServiceResponse(Cart cart) {
+		List<Long> list = new ArrayList<>();
+		cart.getShopList().forEach(x -> {
+			x.getProductList().forEach(y -> {
+				list.add(y.getProductId());
+			});
+		});
+		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
+		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
+		return productList;
+	}
 
     @Override
     public Integer getCartMark(String userId) {
-        Cart cart = getCartList(userId);
-        int mark = Optional.ofNullable(cart.getShopList().stream().mapToInt(ShopCart::getproductListSize).sum()).orElse(0);
-        return mark;
+        Cart cart = getCartList(userId, false);
+//        int mark = cart.getShopList().stream().mapToInt(ShopCart::getProductListSize).sum();
+		int sum = 0;
+		if (cart.getShopList() != null) {
+			for (ShopCart shopCart : cart.getShopList()) {
+				sum += shopCart.getProductListSize();
+			}
+		}
+		return sum;
     }
 
 }

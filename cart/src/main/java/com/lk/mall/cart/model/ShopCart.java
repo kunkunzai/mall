@@ -16,7 +16,7 @@ public class ShopCart implements Serializable, Cloneable {
 	private static final long serialVersionUID = -5510967080302695103L;
 
 	private Long shopId;
-//	private String shopName;
+	private String shopName;
 	private List<ProductCart> productList;
 	private Boolean isAll;
 	
@@ -28,20 +28,20 @@ public class ShopCart implements Serializable, Cloneable {
         this.isAll = isAll;
     }
     
-    public Integer getproductListSize() {
+    public Integer getProductListSize() {
         return productList.size();
     }
     
     public BigDecimal getShopMoney() {
-        BigDecimal b = BigDecimal.ZERO;
+        BigDecimal shopMoney = BigDecimal.ZERO;
         for (ProductCart productCart : productList) {
             BigDecimal productMoney = BigDecimal.ZERO;
             if (null != productCart.getProductMoney()) {
                 productMoney = productCart.getProductMoney();
             }
-            b = b.add(productMoney.multiply(new BigDecimal(productCart.getQuantity())));
+            shopMoney = shopMoney.add(productMoney.multiply(new BigDecimal(productCart.getQuantity().toString())));
         }
-        return b;
+        return shopMoney;
     }
     
 	

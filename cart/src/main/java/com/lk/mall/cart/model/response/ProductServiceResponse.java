@@ -20,5 +20,6 @@ public class ProductServiceResponse {
 	private String description;
 	private String currentItem;
 	private String relevantItem;
+	private String shopName;
 }
 

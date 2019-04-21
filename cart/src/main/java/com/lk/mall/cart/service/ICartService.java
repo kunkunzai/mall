@@ -25,7 +25,7 @@ public interface ICartService {
      * @param userId
      * @return
      */
-    Cart getCartList(String userId);
+    Cart getCartList(String userId, Boolean isPopulate);
     
     /**
      * 获得某一用户购物车角标

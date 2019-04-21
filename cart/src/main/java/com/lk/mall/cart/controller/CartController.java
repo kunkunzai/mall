@@ -29,7 +29,7 @@ public class CartController {
      */
     @RequestMapping("/addCart")
     public Object addCart(
-            @RequestParam("userId") String userId, 
+            @RequestParam("userId") Long userId, 
             @RequestParam("shopId") Long shopId,
             @RequestParam("productId") Long productId) {
 
@@ -70,7 +70,7 @@ public class CartController {
      */
     @RequestMapping("/getCartList")
     public Object getCartList(@RequestParam("userId") String userId) {
-        Cart cart = cartService.getCartList(userId);
+        Cart cart = cartService.getCartList(userId, true);
         return cart;
     }
 }

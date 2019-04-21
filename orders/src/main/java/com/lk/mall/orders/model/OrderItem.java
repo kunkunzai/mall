@@ -29,6 +29,7 @@ public class OrderItem{
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	private Long id;
+	@JsonIgnore
 	private String orderId;
 	private Long productId;
 	private Integer quantity;

@@ -53,7 +53,7 @@ public class OrderController {
 			});
 		});
 		orders.setOrderItemList(orderItemList);
-		if (orders.getOrderItemSize() == 1) {
+		if (ordersVO.getShopList().size() == 1) {
 			orders.setSplitFlag(100);
 		} else {
 			orders.setSplitFlag(200);

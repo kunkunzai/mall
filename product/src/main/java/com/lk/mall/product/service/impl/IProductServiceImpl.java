@@ -3,10 +3,10 @@ package com.lk.mall.product.service.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
-import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,18 +14,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.lk.mall.product.dao.IProductDao;
+import com.lk.mall.product.dao.IShopDao;
 import com.lk.mall.product.model.Product;
-import com.lk.mall.product.model.vo.ProductVO;
+import com.lk.mall.product.model.Shop;
 import com.lk.mall.product.service.IProductService;
 
 @Service
 public class IProductServiceImpl implements IProductService {
 
 	@Autowired
-	private DozerBeanMapper mapper;
-
-	@Autowired
 	private IProductDao productDao;
+	
+	@Autowired
+	private IShopDao shopDao;
 
 	@Override
 	public Product save(Product product) {
@@ -35,12 +36,12 @@ public class IProductServiceImpl implements IProductService {
 	}
 
 	@Override
-	public ProductVO findById(Long id) {
+	public Product findById(Long id) {
 		Optional<Product> product = productDao.findById(id);
 		if (product.isPresent()) {
-			return mapper.map(product.get(), ProductVO.class);
+			return product.get();
 		}
-		return new ProductVO();
+		return new Product();
 	}
 
 	@Override
@@ -58,6 +59,18 @@ public class IProductServiceImpl implements IProductService {
 	@Override
 	public List<Product> findAllById(List<Long> ids) {
 		List<Product> productList = productDao.findAllById(ids);
+		if (productList.isEmpty()) {
+			return null;
+		}
+		List<Long> sids = productList.stream().map(Product::getShopId).collect(Collectors.toList());
+		List<Shop> shopList = shopDao.findAllById(sids);
+		productList.forEach(x -> {
+			shopList.forEach(y -> {
+				if (x.getShopId() == y.getId()) {
+					x.setShopName(y.getName());
+				}
+			});
+		});
 		return productList;
 	}
 

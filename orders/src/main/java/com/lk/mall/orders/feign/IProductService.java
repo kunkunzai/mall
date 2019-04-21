@@ -15,5 +15,5 @@ public interface IProductService {
     ProductServiceResponse findByProductId(@RequestParam(value = "productId") Long productId);
     
     @RequestMapping(value = "/findAllByProductId",method = RequestMethod.GET)
-    List<ProductServiceResponse> findAllByProductId(@RequestParam(value = "productIds") String productIds);
+    List<ProductServiceResponse> findAllByProductId(@RequestParam(value = "productIdList") List<Long> productIdList);
 }

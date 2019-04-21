@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -31,6 +32,8 @@ public class Product {
 	private Long shopId;
 	private Integer type;
 	private String name;
+	@Transient
+	private String shopName;
 	private String smallImage;
 	private String model;
 	private Integer status;
