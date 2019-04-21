@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -18,7 +20,10 @@ public class ShopCart implements Serializable, Cloneable {
 	private Long shopId;
 	private String shopName;
 	private List<ProductCart> productList;
+	@JSONField(serialize = false)
 	private Boolean isAll;
+	@JSONField(serialize = false)
+	private BigDecimal shopMoney;
 	
 	
     public ShopCart(Long shopId, List<ProductCart> productList, Boolean isAll) {
@@ -35,11 +40,7 @@ public class ShopCart implements Serializable, Cloneable {
     public BigDecimal getShopMoney() {
         BigDecimal shopMoney = BigDecimal.ZERO;
         for (ProductCart productCart : productList) {
-            BigDecimal productMoney = BigDecimal.ZERO;
-            if (null != productCart.getProductMoney()) {
-                productMoney = productCart.getProductMoney();
-            }
-            shopMoney = shopMoney.add(productMoney.multiply(new BigDecimal(productCart.getQuantity().toString())));
+            shopMoney = shopMoney.add(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity().toString())));
         }
         return shopMoney;
     }
