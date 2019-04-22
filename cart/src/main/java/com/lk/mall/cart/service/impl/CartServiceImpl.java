@@ -17,6 +17,7 @@ import com.lk.mall.cart.constant.RedisConstant;
 import com.lk.mall.cart.exception.ServicesNotConnectedException;
 import com.lk.mall.cart.feign.IProductService;
 import com.lk.mall.cart.model.Cart;
+import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
 import com.lk.mall.cart.model.response.ProductServiceResponse;
@@ -50,7 +51,7 @@ public class CartServiceImpl implements ICartService {
         if (status == 0) {
             System.out.println("购物车为空");
 //          购物车为空
-            cart = new Cart(Arrays.asList(newShopCart), null);
+            cart = new Cart(Arrays.asList(newShopCart), null, true);
         } else if (status == 1) {
             System.out.println("购物车没有该商家");
 //          没有该商家任何商品，只需要在列表首位新增一个新的ShopCart即可
@@ -179,6 +180,10 @@ public class CartServiceImpl implements ICartService {
                 }
             }
             //TODO:再检查一遍结构,防止前端传错数据导致shopCart里的productList为空
+//            刷新选中状态
+            if(!cartList.getCheck()) {
+                refreshCartCheck(cartList, 3);
+            }
             System.out.println(cartList.toString());
             redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cartList).toString());
         }
@@ -235,6 +240,174 @@ public class CartServiceImpl implements ICartService {
 			}
 		}
 		return sum;
+    }
+
+    @Override
+    public Integer checkCart(Check check, String userId) {
+        Cart cart = getCartList(userId, false);
+        Boolean checkStatus = check.getCheckStatus();
+        Boolean checkAll = check.getCheckAll();
+        if (null != checkAll) {
+//            对购物车进行全选&取消全选操作
+            if (checkStatus) {
+//                全选
+                refreshCartCheck(cart, 1);
+            } else {
+//                取消全选
+                refreshCartCheck(cart, 7);
+            }
+        } else {
+//            没有对购物车进行全选&取消全选操作,下面进入对商家或者商品操作
+            if (null != check.getShopId()) {
+//                对商家进行操作
+                cart.getShopList().forEach(x -> {
+                    if (x.getShopId() == check.getShopId()) {
+                        x.setCheck(checkStatus);
+                    }
+                });
+                if (checkStatus) {
+//                    对商家进行选中
+                    refreshCartCheck(cart, 2);
+                } else {
+//                    对商家进行取消选中
+                    refreshCartCheck(cart, 8);
+                }
+            } else {
+//                对商品进行操作
+                if (null != check.getProductId()) {
+                    cart.getShopList().forEach(x -> {
+                        x.getProductList().forEach(y -> {
+                            if (check.getProductId() == y.getProductId()) {
+                                y.setCheck(checkStatus);
+                            }
+                        });
+                    });
+                    if (checkStatus) {
+//                        对商品进行选中
+                        refreshCartCheck(cart, 3);
+                    } else {
+//                       对商品进行取消选中 
+                        refreshCartCheck(cart, 5);
+                    }
+                }else {
+                    System.err.println("参数错误");
+                }
+            }
+        }
+        redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cart).toString());
+        return null;
+    }
+    
+    
+    /**
+     * 加入购物车不需要触发这个方法
+     * 移出购物车分2种情况:
+     *  非全选:需要触发这个方法:3和4
+     *  全选:不需要触发这个方法
+     * 购物车列表选中一定要触发这个方法
+     * 
+     * @param cart
+     */
+    private void refreshCartCheck(Cart cart, Integer condition) {
+//        购物车列表操作可能出现的共8种情况
+//        未选中->选中
+//        大->小
+//        1.购物车变成全选状态,所有商家所有商品要被选中
+//          2.某个商家选中状态,那个商家的所有商品都要被选中,可能触发操作4
+//        小->大
+//        3.某个商家的所有商品都被选中,那个商家要被选中,可能触发操作4
+//          4.所有商家都被选中,整个购物车都要被选中
+
+//        选中->未选中
+//        小->大
+//        5.某个商品取消选中,对应商家取消选中,一定触发操作6
+//          6.某个商家取消选中,整个购物车取消选中
+//        大->小
+//        7.购物车取消全选,所有商家所有商品取消选中
+//          8.某个商家置取消选中,那么那个商家的所有商品取消选中,一定触发操作6
+        switch (condition) {
+        case 1:
+//            购物车变成全选状态,所有商家所有商品要被选中
+            cart.setCheck(true);
+            cart.getShopList().forEach(x -> {
+                x.setCheck(true);
+                x.getProductList().forEach(y -> {
+                    y.setCheck(true);
+                });
+            });
+            break;
+        case 2:
+//            某个商家选中状态,那个商家的所有商品都要被选中
+            cart.getShopList().forEach(x -> {
+                if (x.getCheck()) {
+                    x.getProductList().forEach(y -> {
+                        y.setCheck(true);
+                    });
+                }
+            });
+//            可能触发操作4
+            if (cart.getShopList().stream().allMatch(x -> x.getCheck())) {
+                cart.setCheck(true);
+            }
+            break;
+        case 3:
+//            某个商家的所有商品都被选中,那个商家要被选中
+            cart.getShopList().forEach(x -> {
+                if (x.getProductList().stream().allMatch(y -> y.getCheck())) {
+                    x.setCheck(true);
+                }
+            });
+//          可能触发操作4
+            if (cart.getShopList().stream().allMatch(x -> x.getCheck())) {
+                cart.setCheck(true);
+            }
+            break;
+        case 4:
+//            所有商家都被选中,整个购物车都要被选中
+            if (cart.getShopList().stream().allMatch(x -> x.getCheck())) {
+                cart.setCheck(true);
+            }
+            break;
+        case 5:
+//            某个商品取消选中,对应商家及整个购物车取消选中
+            cart.getShopList().forEach(x -> {
+                if (x.getProductList().stream().anyMatch(y -> !y.getCheck())) {
+                    x.setCheck(false);
+                }
+            });
+            cart.setCheck(false);
+            break;
+        case 6:
+//            某个商家取消选中,整个购物车取消选中
+            if (cart.getShopList().stream().anyMatch(x -> !x.getCheck())) {
+                cart.setCheck(false);
+            }
+            break;
+        case 7:
+//           购物车取消全选,所有商家取消选中
+            cart.setCheck(false);
+            cart.getShopList().forEach(x -> {
+                x.setCheck(false);
+                x.getProductList().forEach(y -> {
+                    y.setCheck(false);
+                });
+            });
+            break;
+        case 8:
+//            某个商家置取消选中,那么那个商家的所有商品取消选中
+            cart.getShopList().forEach(x -> {
+                if (!x.getCheck()) {
+                    x.getProductList().forEach(y -> {
+                        y.setCheck(false);
+                    });
+                }
+            });
+            cart.setCheck(false);
+            break;
+        default:
+            System.err.println("输入有误");
+            break;
+        }
     }
 
 }

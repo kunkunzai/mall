@@ -16,16 +16,19 @@ public class ProductCart implements Serializable, Cloneable {
 
 	private Long productId;
 	private Integer quantity;
+	private Boolean check;
 	private String productName;
 	private String productImage;
 	private String subtitle;
 	private BigDecimal productMoney;
 	private Integer stock;
 	
-    public ProductCart(Long productId, Integer quantity) {
+	 public ProductCart(Long productId, Integer quantity, Boolean check) {
         super();
         this.productId = productId;
         this.quantity = quantity;
+        this.check = check;
+
     }
 	
 	

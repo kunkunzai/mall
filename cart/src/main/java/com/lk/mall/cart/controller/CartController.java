@@ -2,6 +2,8 @@ package com.lk.mall.cart.controller;
 
 import java.util.Arrays;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lk.mall.cart.model.Cart;
+import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
 import com.lk.mall.cart.service.ICartService;
@@ -33,7 +36,7 @@ public class CartController {
             @RequestParam("shopId") Long shopId,
             @RequestParam("productId") Long productId) {
 
-        ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1)), false);
+        ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), false, true);
         cartService.addCart(shopCart, userId.toString());
         return 200;
     }
@@ -45,7 +48,7 @@ public class CartController {
      * @return
      */
     @RequestMapping("/deleteCart")
-    public Object deleteCart(@RequestBody Cart cart, @RequestParam("userId") String userId) {
+    public Object deleteCart(@Valid @RequestBody Cart cart, @RequestParam("userId") String userId) {
         cartService.deleteCart(userId, cart);
         return 200;
     }
@@ -72,5 +75,11 @@ public class CartController {
     public Object getCartList(@RequestParam("userId") String userId) {
         Cart cart = cartService.getCartList(userId, true);
         return cart;
+    }
+    
+    @RequestMapping("/checkCart")
+    public Object checkCart(@RequestParam("userId") String userId, @Valid @RequestBody Check check) {
+        cartService.checkCart(check, userId);
+        return 200;
     }
 }

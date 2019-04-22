@@ -19,18 +19,22 @@ public class ShopCart implements Serializable, Cloneable {
 
 	private Long shopId;
 	private String shopName;
+	private Boolean check;
 	private List<ProductCart> productList;
 	@JSONField(serialize = false)
 	private Boolean isAll;
 	@JSONField(serialize = false)
+	private Integer productListSize;
+	@JSONField(serialize = false)
 	private BigDecimal shopMoney;
 	
 	
-    public ShopCart(Long shopId, List<ProductCart> productList, Boolean isAll) {
+    public ShopCart(Long shopId, List<ProductCart> productList, Boolean isAll, Boolean check) {
         super();
         this.shopId = shopId;
         this.productList = productList;
         this.isAll = isAll;
+        this.check = check;
     }
     
     public Integer getProductListSize() {
