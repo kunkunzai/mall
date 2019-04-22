@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
 import com.alibaba.fastjson.annotation.JSONField;
 
 import lombok.Data;
@@ -17,9 +20,11 @@ public class ShopCart implements Serializable, Cloneable {
 
 	private static final long serialVersionUID = -5510967080302695103L;
 
+	@NotNull(message="店铺id不能为空")
 	private Long shopId;
 	private String shopName;
 	private Boolean check;
+	@NotEmpty(message="商品列表不能为空")
 	private List<ProductCart> productList;
 	@JSONField(serialize = false)
 	private Boolean isAll;

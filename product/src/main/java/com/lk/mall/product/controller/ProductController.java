@@ -2,6 +2,8 @@ package com.lk.mall.product.controller;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,7 +42,7 @@ public class ProductController {
 	}
 
 	@RequestMapping("/saveProduct")
-	public Product saveproduct(@RequestBody Product product) {
+	public Product saveproduct(@Valid @RequestBody Product product) {
 		System.err.println(product.toString());
 		return productService.save(product);
 	}

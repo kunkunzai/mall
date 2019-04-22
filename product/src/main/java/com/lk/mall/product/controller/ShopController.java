@@ -1,5 +1,7 @@
 package com.lk.mall.product.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +23,7 @@ public class ShopController {
 	}
 
 	@RequestMapping("/saveShop")
-	public Shop saveShop(@RequestBody Shop Shop) {
+	public Shop saveShop(@Valid @RequestBody Shop Shop) {
 		System.err.println(Shop.toString());
 		return ShopService.save(Shop);
 	}
