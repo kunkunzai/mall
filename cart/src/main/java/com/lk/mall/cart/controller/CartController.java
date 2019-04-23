@@ -1,6 +1,7 @@
 package com.lk.mall.cart.controller;
 
 import java.util.Arrays;
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -36,20 +37,8 @@ public class CartController {
             @RequestParam("shopId") Long shopId,
             @RequestParam("productId") Long productId) {
 
-        ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), false, true);
+        ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), true);
         cartService.addCart(shopCart, userId.toString());
-        return 200;
-    }
-
-    /**
-     * 删除购物车 将该商品从购物车里删除
-     * 
-     * @param request
-     * @return
-     */
-    @RequestMapping("/deleteCart")
-    public Object deleteCart(@Valid @RequestBody Cart cart, @RequestParam("userId") String userId) {
-        cartService.deleteCart(userId, cart);
         return 200;
     }
 
@@ -76,10 +65,28 @@ public class CartController {
         Cart cart = cartService.getCartList(userId, true);
         return cart;
     }
-    
+   
+    /**
+     * 选中&取消选中
+     * @param userId
+     * @param check
+     * @return
+     */
     @RequestMapping("/checkCart")
     public Object checkCart(@RequestParam("userId") String userId, @Valid @RequestBody Check check) {
         cartService.checkCart(check, userId);
+        return 200;
+    }
+    
+    /**
+     * 删除商品
+     * @param userId
+     * @param productIdList
+     * @return
+     */
+    @RequestMapping("/deleteProduct")
+    public Object deleteProduct(@RequestParam("userId") String userId, @Valid @RequestParam List<Long> productIdList) {
+        cartService.deleteProduct(userId, productIdList);
         return 200;
     }
 }
