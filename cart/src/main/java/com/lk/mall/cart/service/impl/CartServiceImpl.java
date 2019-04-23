@@ -1,9 +1,9 @@
 package com.lk.mall.cart.service.impl;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,13 +31,11 @@ public class CartServiceImpl implements ICartService {
     private RedisUtil redisUtil;
     
     @Autowired
-    private IProductService productService;
+    IProductService productService;
 
     @Override
     public Integer addCart(ShopCart newShopCart, String userId) {
-//        先获取用户自身的购物车列表
         Cart cart = getCartList(userId, false);
-//        定位新加入的商品在购物车的位置
         Map<String, Integer> location = getListLocation(cart, newShopCart);
         int status = location.get("status");
         int shopFlag = location.get("shopFlag");
@@ -53,7 +51,7 @@ public class CartServiceImpl implements ICartService {
         if (status == 0) {
             System.out.println("购物车为空");
 //          购物车为空
-            cart = new Cart(Arrays.asList(newShopCart), true);
+            cart = new Cart(Arrays.asList(newShopCart), null, true);
         } else if (status == 1) {
             System.out.println("购物车没有该商家");
 //          没有该商家任何商品，只需要在列表首位新增一个新的ShopCart即可
@@ -140,6 +138,59 @@ public class CartServiceImpl implements ICartService {
     }
 
     @Override
+    public Integer deleteCart(String userId, Cart cart) {
+//        全部删除
+        if (cart.getIsAll()) {
+            redisUtil.set(userId, null);
+        } else {
+//            定义2个list,一个用来存要删除的商家,一个用来存要删除的商品
+            List<Long> shopIds = new ArrayList<>();
+            List<Long> productIds = new ArrayList<>();
+            cart.getShopList().forEach(x -> {
+                if (x.getIsAll()) {
+                    shopIds.add(x.getShopId());
+                } else {
+                    x.getProductList().forEach(y -> {
+                        productIds.add(y.getProductId());
+                    });
+                }
+            });
+//            从服务器拿到购物车列表
+            Cart cartList = getCartList(userId, false);
+//            删除商家
+            Iterator<ShopCart> shopCart = cartList.getShopList().iterator();
+            while (shopCart.hasNext()) {
+                ShopCart x = shopCart.next();
+                for (Long shopId : shopIds) {
+                    if (x.getShopId() == shopId) {
+                        shopCart.remove();
+                    }
+                }
+            }
+//            删除商品
+            for (ShopCart x : cartList.getShopList()) {
+                Iterator<ProductCart> productCart = x.getProductList().iterator();
+                while (productCart.hasNext()) {
+                    ProductCart y = productCart.next();
+                    for (Long productId : productIds) {
+                        if (y.getProductId() == productId) {
+                            productCart.remove();
+                        }
+                    }
+                }
+            }
+            //TODO:再检查一遍结构,防止前端传错数据导致shopCart里的productList为空
+//            刷新选中状态
+            if(!cartList.getCheck()) {
+                refreshCartCheck(cartList, 3);
+            }
+            System.out.println(cartList.toString());
+            redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cartList).toString());
+        }
+        return 0;
+    }
+
+    @Override
     public Cart getCartList(String userId, Boolean isPopulate) {
         String cartStr = redisUtil.get(RedisConstant.REDIS_CART_PREFIX + userId);
 		if (null == cartStr || cartStr.isEmpty()) {
@@ -147,54 +198,20 @@ public class CartServiceImpl implements ICartService {
 		}
         Cart cart = JSONObject.parseObject(cartStr, Cart.class);
         if(isPopulate) {
-//            填充商品信息
-        	List<ProductServiceResponse> productServiceResponseList = getProductServiceResponse(cart);
-        	BigDecimal orderMoney = BigDecimal.ZERO;
-            for (ShopCart shopCart : cart.getShopList()) {
-                BigDecimal shopMoney = BigDecimal.ZERO;
-                for (ProductCart productCart : shopCart.getProductList()) {
-                    for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
-                        if (productCart.getProductId() == productServiceResponse.getId()) {
-                            productCart.setProductImage(productServiceResponse.getSmallImage());
-                            productCart.setProductMoney(productServiceResponse.getSalePrice());
-                            productCart.setProductName(productServiceResponse.getName());
-                            productCart.setSubtitle(productServiceResponse.getDescription());
-                            productCart.setType(productServiceResponse.getType());
-                            productCart.setStatus(productServiceResponse.getStatus());
-                            if (1 == productServiceResponse.getStatus()) {
-                                productCart.setProductTotal(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
-                            }else {
-                                productCart.setProductTotal(BigDecimal.ZERO);
-                            }
-                            shopCart.setShopName(productServiceResponse.getShopName());
-                            shopMoney = shopMoney.add(productCart.getProductTotal());
-                        }
-                    }
-                }
-                shopCart.setShopMoney(shopMoney);
-                orderMoney = orderMoney.add(shopMoney);
-            }
-            cart.setOrderMoney(orderMoney);
-//        	  定义个list用来存放失效的商品
-            List<ProductCart> productList = new ArrayList<>();
-//            过滤一遍购物车,将过滤到失效的商品,将它放到用来存放失效的商品的list中,并且从原list中移除
-//            将list从大到小循环可以保证删除不报错
-            for (int i = cart.getShopList().size() - 1; i >= 0; i--) {
-                ShopCart shopCart = cart.getShopList().get(i);
-                for (int j = shopCart.getProductList().size() - 1; j >= 0; j--) {
-                    ProductCart productCart = shopCart.getProductList().get(j);
-                    if (2 == productCart.getStatus()) {
-//                        过滤到失效的商品,将它放到用来存放失效的商品的list中,并且从原list中移除
-                        productList.add(productCart);
-                        shopCart.getProductList().remove(j);
-                    }
-                }
-//                如果一个商家的所有商品都失效了,那么将这个商家移除
-                if (shopCart.getProductList().size() == 0) {
-                    cart.getShopList().remove(i);
-                }
-            }
-            cart.setLoseEfficacyList(productList);
+        	List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(cart);
+        	cart.getShopList().forEach(x -> {
+        		x.getProductList().forEach(y -> {
+        			productServiceResponse.forEach(z -> {
+        				if (y.getProductId() == z.getId()) {
+        					y.setProductImage(z.getSmallImage());
+        					y.setProductMoney(z.getSalePrice());
+        					y.setProductName(z.getName());
+        					y.setSubtitle(z.getDescription());
+        					x.setShopName(z.getShopName());
+        				}
+        			});
+        		});
+        	});
         }
         return cart;
     }
@@ -215,6 +232,7 @@ public class CartServiceImpl implements ICartService {
     @Override
     public Integer getCartMark(String userId) {
         Cart cart = getCartList(userId, false);
+//        int mark = cart.getShopList().stream().mapToInt(ShopCart::getProductListSize).sum();
 		int sum = 0;
 		if (cart.getShopList() != null) {
 			for (ShopCart shopCart : cart.getShopList()) {
@@ -391,41 +409,5 @@ public class CartServiceImpl implements ICartService {
             break;
         }
     }
-
-    @Override
-	public Integer deleteProduct(String userId, List<Long> productIdList) {
-		Cart cart = null;
-//		与前端约定,只传来一个0为全部删除
-		if (productIdList.get(0) != 0) {
-			cart = getCartList(userId, false);
-//      	删除商品
-			for (int i = cart.getShopList().size() - 1; i >= 0; i--) {
-				ShopCart shopCart = cart.getShopList().get(i);
-				for (int j = shopCart.getProductList().size() - 1; j >= 0; j--) {
-					ProductCart productCart = shopCart.getProductList().get(j);
-					for (Long productId : productIdList) {
-						if (productId == productCart.getProductId()) {
-//                    		过滤到失效的商品,从原list中移除
-							shopCart.getProductList().remove(j);
-						}
-					}
-				}
-//            	如果一个商家的所有商品都失效了,那么将这个商家移除
-				if (shopCart.getProductList().size() == 0) {
-					cart.getShopList().remove(i);
-				}
-			}
-//			如果所有商家都被移除了,那么购物车列表就为空
-			if (cart.getShopList().size() == 0) {
-				cart = null;
-			}
-		}
-		if(null==cart) {
-			redisUtil.delete(RedisConstant.REDIS_CART_PREFIX + userId);
-		}else {
-			redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cart).toString());
-		}
-		return null;
-	}
 
 }

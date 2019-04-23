@@ -1,7 +1,5 @@
 package com.lk.mall.cart.service;
 
-import java.util.List;
-
 import com.lk.mall.cart.model.Cart;
 import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ShopCart;
@@ -16,6 +14,13 @@ public interface ICartService {
      */
 	Integer addCart(ShopCart shopCart, String userId);
 
+    /**
+     * 清空购物车
+     * @param userId
+     * @return
+     */
+    Integer deleteCart(String userId, Cart cart);
+    
     /**
      * 获得用户购物车信息
      * @param userId
@@ -36,13 +41,5 @@ public interface ICartService {
      * @return
      */
     Integer checkCart(Check check, String userId);
-    
-    /**
-     * 删除商品
-     * @param productIds
-     * @param userId
-     * @return
-     */
-    Integer deleteProduct(String userId, List<Long> productIdList);
     
 }
