@@ -10,8 +10,6 @@ import javax.validation.Valid;
 
 import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,32 +17,34 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
-import com.lk.mall.orders.model.vo.CornerMarkVO;
 import com.lk.mall.orders.model.vo.OrdersVO;
 import com.lk.mall.orders.model.vo.PaymentVO;
 import com.lk.mall.orders.model.vo.SettlementVO;
-import com.lk.mall.orders.service.IOrdersService;
+import com.lk.mall.orders.service.IUserDisposeService;
+import com.lk.mall.orders.service.IUserQueryService;
 
 @RestController
-public class OrderController {
+public class UserDisposeController {
 
 	@Autowired
-	IOrdersService ordersService;
+	IUserDisposeService userDisposeService;
+	@Autowired
+	IUserQueryService userQueryService;
 
 	@Autowired
 	private DozerBeanMapper mapper;
 
-	@GetMapping(value = "/settleOrder")
+	@RequestMapping(value = "/settleOrder")
 	public SettlementVO settleOrder(@Valid @RequestBody SettlementVO settlementVO) {
-		SettlementVO newSettlementVO = ordersService.settle(settlementVO);
+		SettlementVO newSettlementVO = userDisposeService.settle(settlementVO);
 		return newSettlementVO;
 	}
 
-	@GetMapping(value = "/saveOrder")
+	@RequestMapping(value = "/saveOrder")
 	public Orders saveOrder(@Valid @RequestBody OrdersVO ordersVO) {
 		Orders orders = generateOrder(ordersVO);
-		Orders newOrder = ordersService.save(orders);
-		return ordersService.findByOrderId(newOrder.getOrderId());
+		Orders newOrder = userDisposeService.save(orders);
+		return userQueryService.findOrderByOrderId(newOrder.getOrderId());
 	}
 
 	private Orders generateOrder(OrdersVO ordersVO) {
@@ -77,38 +77,17 @@ public class OrderController {
 
 	@RequestMapping("/payOrder")
 	public Integer payOrder(@RequestBody PaymentVO paymentVO) {
-		return ordersService.pay(paymentVO);
+		return userDisposeService.pay(paymentVO);
 	}
-
-	@RequestMapping("/findByOrderId")
-	public Orders findByOrderId(@RequestParam("orderId") String orderId) {
-		return ordersService.findByOrderId(orderId);
-	}
-
-	@RequestMapping("/findByUserId")
-	public Page<Orders> findByUserId(
-			@RequestParam("userId") Long userId, 
-			@RequestParam("status") Integer status,
-			@RequestParam(value = "page", defaultValue = "0") Integer page,
-			@RequestParam(value = "size", defaultValue = "2") Integer size) {
-
-		return ordersService.findByUserId(userId, status, page, size);
-	}
-	
-	
-    @RequestMapping("/findCornerMarkByUserId")
-    public CornerMarkVO findCornerMarkByUserId(@RequestParam("userId") Long userId) {
-        return ordersService.findCornerMarkByUserId(userId);
-    }
 	
     @RequestMapping("/cancelOrder")
     public Integer cancelOrder(@RequestParam("userId") Long userId, @RequestParam("orderId") String orderId) {
-        return ordersService.cancelOrder(userId, orderId);
+        return userDisposeService.cancelOrder(userId, orderId);
     }
 	
     @RequestMapping("/deleteOrder")
     public Integer deleteOrder(@RequestParam("userId") Long userId, @RequestParam("orderId") String orderId) {
-        return ordersService.deleteOrder(userId, orderId);
+        return userDisposeService.deleteOrder(userId, orderId);
     }
 
 }

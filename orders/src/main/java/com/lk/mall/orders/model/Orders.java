@@ -38,7 +38,6 @@ public class Orders {
 	@JsonIgnore
 	private String parentOrderId;
 	private String orderId;
-	@JsonIgnore
 	private Integer orderWay;
 	private Integer orderStatus;
 	private String orderDesc;
