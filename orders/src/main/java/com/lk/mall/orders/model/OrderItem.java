@@ -10,6 +10,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
@@ -44,8 +47,8 @@ public class OrderItem{
 	private String shopName;
 	private Integer shopType;
 	private String orderItemsDesc;
-	@JsonIgnore
+    @DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime createTime;
-	@JsonIgnore
+    @DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime updateTime;
 }
