@@ -31,7 +31,6 @@ import com.lk.mall.orders.feign.IProductService;
 import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
 import com.lk.mall.orders.model.response.ProductServiceResponse;
-import com.lk.mall.orders.model.vo.CornerMarkVO;
 import com.lk.mall.orders.model.vo.PaymentVO;
 import com.lk.mall.orders.model.vo.SettlementVO;
 import com.lk.mall.orders.service.IOrdersService;
@@ -152,7 +151,6 @@ public class OrdersServiceImpl implements IOrdersService {
 		PageRequest pageable = PageRequest.of(page, size, Sort.Direction.DESC, "orderTime");
 //		查找orders表
 		Page<Orders> ordersPage = ordersDao.findAll((root, query, criteriaBuilder) -> {
-		    Predicate p0 = criteriaBuilder.equal(root.get("isDelete").as(Integer.class), 1);
 			Predicate p1 = criteriaBuilder.equal(root.get("userId").as(Long.class), userId);
 			Predicate p2 = criteriaBuilder.equal(root.get("orderStatus").as(Integer.class), status);
 			if (status == 0 || status == 5) {
@@ -160,13 +158,13 @@ public class OrdersServiceImpl implements IOrdersService {
 				in.value(100);
 				in.value(200);
 				if (status == 0) {
-					query.where(criteriaBuilder.and(p0, p1, in));
+					query.where(criteriaBuilder.and(p1, in));
 				} else {
-					query.where(criteriaBuilder.and(p0, p1, p2, in));
+					query.where(criteriaBuilder.and(p1, p2, in));
 				}
 			} else {
 				Predicate p3 = criteriaBuilder.equal(root.get("splitFlag").as(Integer.class), 100);
-				query.where(criteriaBuilder.and(p0, p1, p2, p3));
+				query.where(criteriaBuilder.and(p1, p2, p3));
 			}
 			return query.getRestriction();
 		}, pageable);
@@ -235,7 +233,6 @@ public class OrdersServiceImpl implements IOrdersService {
 		Orders orders = verifyOrder(paymentVO);
 		orders.setOrderStatus(8);
 		orders.setTradeId(paymentVO.getTradeId());
-		orders.setPayTime(LocalDateTime.now());
 		ordersDao.saveAndFlush(orders);
 		payFinish(orders, paymentVO);
 		if (orders.getSplitFlag() == 200) {
@@ -314,81 +311,5 @@ public class OrdersServiceImpl implements IOrdersService {
 	private void createRefundPay(Orders orders, PaymentVO paymentVO) {
 
 	}
-
-    @Override
-    public CornerMarkVO findCornerMarkByUserId(Long userId) {
-        List<Orders> orderList = ordersDao.findAll((root, query, criteriaBuilder) -> {
-            Predicate uid = criteriaBuilder.equal(root.get("userId").as(Long.class), userId);
-            CriteriaBuilder.In<Object> status = criteriaBuilder.in(root.get("orderStatus"));
-            status.value(5);
-            status.value(8);
-            status.value(10);
-            status.value(15);
-            CriteriaBuilder.In<Object> split = criteriaBuilder.in(root.get("splitFlag"));
-            split.value(100);
-            split.value(200);
-            query.where(criteriaBuilder.and(uid, status, split));
-            return query.getRestriction();
-        });
-//        分组求和
-        Map<Integer, Long> map = orderList.stream().collect(Collectors.groupingBy(Orders::getOrderStatus, Collectors.counting()));
-        map.entrySet().forEach(x -> System.out.println("状态 ：" + x.getKey() + "，数量：" + x.getValue()));
-        CornerMarkVO corner = new CornerMarkVO();
-        map.entrySet().forEach(x -> {
-            switch (x.getKey()) {
-            case 5:
-                corner.setCountWaitPay(x.getValue());
-                break;
-            case 8:
-                corner.setCountWaitSend(x.getValue());
-                break;
-            case 10:
-                corner.setCountWaitReceive(x.getValue());
-                break;
-            case 15:
-                corner.setCountWaitEvaluate(x.getValue());
-                break;
-            default:
-                break;
-            }
-        });
-        return corner;
-    }
-
-    @Override
-    public Integer deleteOrder(Long userId, String orderId) {
-        Orders orders = ordersDao.findByOrderId(orderId);
-        if (userId != orders.getUserId()) {
-            System.out.println("不是本人操作");
-            return 100;
-        }
-        if (2 != orders.getOrderStatus() && 20 != orders.getOrderStatus()) {
-            System.out.println("目前不可删除");
-            return 100;
-        }
-        orders.setIsDelete(2);
-        ordersDao.saveAndFlush(orders);
-        return 200;
-    }
-
-    @Override
-    public Integer cancelOrder(Long userId, String orderId) {
-        Orders orders = ordersDao.findByOrderId(orderId);
-        if (userId != orders.getUserId()) {
-            System.out.println("不是本人操作");
-            return 100;
-        }
-        if (2 == orders.getOrderStatus()) {
-            System.out.println("订单已取消");
-            return 100;
-        }
-        if (5 != orders.getOrderStatus()) {
-            System.out.println("订单不可取消");
-            return 100;
-        }
-        orders.setOrderStatus(2);
-        ordersDao.saveAndFlush(orders);
-        return 200;
-    }
 
 }

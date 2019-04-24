@@ -33,7 +33,7 @@ public class OrdersVO {
 	private String zipCode;
 	private Integer splitFlag;
 	private LocalDateTime proCycleTime;
-	private LocalDateTime proCycleTimeEnd;
+//	private LocalDateTime proCycleTimeE;
 	private Timestamp userReceiveTime;
 	private String logisticsCompany;
 	private String logisticsCompanyCode;
