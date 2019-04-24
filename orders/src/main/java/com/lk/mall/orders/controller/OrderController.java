@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.validation.Valid;
+
 import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
+import com.lk.mall.orders.model.vo.CornerMarkVO;
 import com.lk.mall.orders.model.vo.OrdersVO;
 import com.lk.mall.orders.model.vo.PaymentVO;
 import com.lk.mall.orders.model.vo.SettlementVO;
@@ -32,13 +35,13 @@ public class OrderController {
 	private DozerBeanMapper mapper;
 
 	@GetMapping(value = "/settleOrder")
-	public SettlementVO settleOrder(@RequestBody SettlementVO settlementVO) {
+	public SettlementVO settleOrder(@Valid @RequestBody SettlementVO settlementVO) {
 		SettlementVO newSettlementVO = ordersService.settle(settlementVO);
 		return newSettlementVO;
 	}
 
 	@GetMapping(value = "/saveOrder")
-	public Orders saveOrder(@RequestBody OrdersVO ordersVO) {
+	public Orders saveOrder(@Valid @RequestBody OrdersVO ordersVO) {
 		Orders orders = generateOrder(ordersVO);
 		Orders newOrder = ordersService.save(orders);
 		return ordersService.findByOrderId(newOrder.getOrderId());
@@ -55,6 +58,7 @@ public class OrderController {
 		orders.setOrderItemList(orderItemList);
 		if (ordersVO.getShopList().size() == 1) {
 			orders.setSplitFlag(100);
+			orders.setShopId(ordersVO.getShopList().get(0).getShopId());
 		} else {
 			orders.setSplitFlag(200);
 		}
@@ -90,5 +94,21 @@ public class OrderController {
 
 		return ordersService.findByUserId(userId, status, page, size);
 	}
+	
+	
+    @RequestMapping("/findCornerMarkByUserId")
+    public CornerMarkVO findCornerMarkByUserId(@RequestParam("userId") Long userId) {
+        return ordersService.findCornerMarkByUserId(userId);
+    }
+	
+    @RequestMapping("/cancelOrder")
+    public Integer cancelOrder(@RequestParam("userId") Long userId, @RequestParam("orderId") String orderId) {
+        return ordersService.cancelOrder(userId, orderId);
+    }
+	
+    @RequestMapping("/deleteOrder")
+    public Integer deleteOrder(@RequestParam("userId") Long userId, @RequestParam("orderId") String orderId) {
+        return ordersService.deleteOrder(userId, orderId);
+    }
 
 }
