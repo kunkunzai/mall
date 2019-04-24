@@ -6,36 +6,32 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.lk.mall.cart.constant.RedisConstant;
-import com.lk.mall.cart.exception.ServicesNotConnectedException;
-import com.lk.mall.cart.feign.IProductService;
 import com.lk.mall.cart.model.Cart;
 import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
-import com.lk.mall.cart.model.response.ProductServiceResponse;
-import com.lk.mall.cart.service.ICartService;
+import com.lk.mall.cart.service.ICartDisposeService;
+import com.lk.mall.cart.service.ICartQueryService;
 import com.lk.mall.cart.utils.RedisUtil;
 
 @Service
-public class CartServiceImpl implements ICartService {
+public class CartDisposeServiceImpl implements ICartDisposeService {
 
     @Autowired
     private RedisUtil redisUtil;
     
     @Autowired
-    IProductService productService;
+    private ICartQueryService cartQueryService;
 
     @Override
     public Integer addCart(ShopCart newShopCart, String userId) {
-        Cart cart = getCartList(userId, false);
+        Cart cart = cartQueryService.getCartList(userId, false);
         Map<String, Integer> location = getListLocation(cart, newShopCart);
         int status = location.get("status");
         int shopFlag = location.get("shopFlag");
@@ -156,7 +152,7 @@ public class CartServiceImpl implements ICartService {
                 }
             });
 //            从服务器拿到购物车列表
-            Cart cartList = getCartList(userId, false);
+            Cart cartList = cartQueryService.getCartList(userId, false);
 //            删除商家
             Iterator<ShopCart> shopCart = cartList.getShopList().iterator();
             while (shopCart.hasNext()) {
@@ -189,62 +185,10 @@ public class CartServiceImpl implements ICartService {
         }
         return 0;
     }
-
-    @Override
-    public Cart getCartList(String userId, Boolean isPopulate) {
-        String cartStr = redisUtil.get(RedisConstant.REDIS_CART_PREFIX + userId);
-		if (null == cartStr || cartStr.isEmpty()) {
-			return null;
-		}
-        Cart cart = JSONObject.parseObject(cartStr, Cart.class);
-        if(isPopulate) {
-        	List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(cart);
-        	cart.getShopList().forEach(x -> {
-        		x.getProductList().forEach(y -> {
-        			productServiceResponse.forEach(z -> {
-        				if (y.getProductId() == z.getId()) {
-        					y.setProductImage(z.getSmallImage());
-        					y.setProductMoney(z.getSalePrice());
-        					y.setProductName(z.getName());
-        					y.setSubtitle(z.getDescription());
-        					x.setShopName(z.getShopName());
-        				}
-        			});
-        		});
-        	});
-        }
-        return cart;
-    }
     
-    // 调用product服务得到product详情
-	private List<ProductServiceResponse> getProductServiceResponse(Cart cart) {
-		List<Long> list = new ArrayList<>();
-		cart.getShopList().forEach(x -> {
-			x.getProductList().forEach(y -> {
-				list.add(y.getProductId());
-			});
-		});
-		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
-		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
-		return productList;
-	}
-
-    @Override
-    public Integer getCartMark(String userId) {
-        Cart cart = getCartList(userId, false);
-//        int mark = cart.getShopList().stream().mapToInt(ShopCart::getProductListSize).sum();
-		int sum = 0;
-		if (cart.getShopList() != null) {
-			for (ShopCart shopCart : cart.getShopList()) {
-				sum += shopCart.getProductListSize();
-			}
-		}
-		return sum;
-    }
-
     @Override
     public Integer checkCart(Check check, String userId) {
-        Cart cart = getCartList(userId, false);
+        Cart cart = cartQueryService.getCartList(userId, false);
         Boolean checkStatus = check.getCheckStatus();
         Boolean checkAll = check.getCheckAll();
         if (null != checkAll) {

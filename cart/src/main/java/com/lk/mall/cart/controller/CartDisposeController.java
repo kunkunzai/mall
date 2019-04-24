@@ -14,13 +14,13 @@ import com.lk.mall.cart.model.Cart;
 import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
-import com.lk.mall.cart.service.ICartService;
+import com.lk.mall.cart.service.ICartDisposeService;
 
 @RestController
-public class CartController {
+public class CartDisposeController {
 
     @Autowired
-    private ICartService cartService;
+    private ICartDisposeService cartDisposeService;
 
     /**
      * 加入购物车
@@ -37,7 +37,19 @@ public class CartController {
             @RequestParam("productId") Long productId) {
 
         ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), false, true);
-        cartService.addCart(shopCart, userId.toString());
+        cartDisposeService.addCart(shopCart, userId.toString());
+        return 200;
+    }
+
+    /**
+     * 选中&取消选中商品
+     * @param userId
+     * @param check
+     * @return
+     */
+    @RequestMapping("/checkCart")
+    public Object checkCart(@RequestParam("userId") String userId, @Valid @RequestBody Check check) {
+    	cartDisposeService.checkCart(check, userId);
         return 200;
     }
 
@@ -49,37 +61,8 @@ public class CartController {
      */
     @RequestMapping("/deleteCart")
     public Object deleteCart(@Valid @RequestBody Cart cart, @RequestParam("userId") String userId) {
-        cartService.deleteCart(userId, cart);
+    	cartDisposeService.deleteCart(userId, cart);
         return 200;
     }
 
-    /**
-     * 得到购物车角标
-     * 
-     * @param request
-     * @return
-     */
-    @RequestMapping("/getCartMark")
-    public Object getCartMark(@RequestParam("userId") String userId) {
-        int mark = cartService.getCartMark(userId);
-        return mark;
-    }
-
-    /**
-     * 查看购物车列表
-     * 
-     * @param request
-     * @return
-     */
-    @RequestMapping("/getCartList")
-    public Object getCartList(@RequestParam("userId") String userId) {
-        Cart cart = cartService.getCartList(userId, true);
-        return cart;
-    }
-    
-    @RequestMapping("/checkCart")
-    public Object checkCart(@RequestParam("userId") String userId, @Valid @RequestBody Check check) {
-        cartService.checkCart(check, userId);
-        return 200;
-    }
 }
