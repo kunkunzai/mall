@@ -31,5 +31,13 @@ public class RedisUtil {
         ValueOperations<String, String> ops = template.opsForValue();
         return ops.get(key);
     }
+    
+    /**
+     * 删除key
+     * @param key
+     */
+    public void delete(String key){
+        template.delete(key);
+    }
 
 }

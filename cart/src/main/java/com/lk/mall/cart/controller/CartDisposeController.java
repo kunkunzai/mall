@@ -1,6 +1,7 @@
 package com.lk.mall.cart.controller;
 
 import java.util.Arrays;
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.lk.mall.cart.model.Cart;
 import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
@@ -24,7 +24,6 @@ public class CartDisposeController {
 
     /**
      * 加入购物车
-     * 
      * @param userId
      * @param shopId
      * @param productId
@@ -32,12 +31,12 @@ public class CartDisposeController {
      */
     @RequestMapping("/addCart")
     public Object addCart(
-            @RequestParam("userId") Long userId, 
+            @RequestParam("userId") String userId, 
             @RequestParam("shopId") Long shopId,
             @RequestParam("productId") Long productId) {
 
-        ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), false, true);
-        cartDisposeService.addCart(shopCart, userId.toString());
+    	ShopCart shopCart = new ShopCart(shopId, Arrays.asList(new ProductCart(productId, 1, true)), true);
+        cartDisposeService.addCart(shopCart, userId);
         return 200;
     }
 
@@ -52,16 +51,26 @@ public class CartDisposeController {
     	cartDisposeService.checkCart(check, userId);
         return 200;
     }
+    
+    @RequestMapping("/updateQuantity")
+    public Object updateQuantity(            
+    		@RequestParam("userId") String userId, 
+            @RequestParam("shopId") Long shopId,
+            @RequestParam("productId") Long productId,
+            @RequestParam("quantity") Integer quantity) {
+    	cartDisposeService.updateQuantity(shopId, productId, quantity, userId);
+        return 200;
+    }
 
     /**
-     * 删除购物车 将该商品从购物车里删除
-     * 
-     * @param request
+     * 将该商品从购物车里删除
+     * @param userId
+     * @param productIdList
      * @return
      */
-    @RequestMapping("/deleteCart")
-    public Object deleteCart(@Valid @RequestBody Cart cart, @RequestParam("userId") String userId) {
-    	cartDisposeService.deleteCart(userId, cart);
+    @RequestMapping("/deleteProduct")
+    public Object deleteProduct(@RequestParam("userId") String userId, @Valid @RequestParam List<Long> productIdList) {
+    	cartDisposeService.deleteProduct(userId, productIdList);
         return 200;
     }
 

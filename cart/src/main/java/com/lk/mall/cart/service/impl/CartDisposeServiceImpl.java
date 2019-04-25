@@ -1,9 +1,7 @@
 package com.lk.mall.cart.service.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +45,7 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
         if (status == 0) {
             System.out.println("购物车为空");
 //          购物车为空
-            cart = new Cart(Arrays.asList(newShopCart), null, true);
+            cart = new Cart(Arrays.asList(newShopCart), true);
         } else if (status == 1) {
             System.out.println("购物车没有该商家");
 //          没有该商家任何商品，只需要在列表首位新增一个新的ShopCart即可
@@ -134,57 +132,40 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
     }
 
     @Override
-    public Integer deleteCart(String userId, Cart cart) {
-//        全部删除
-        if (cart.getIsAll()) {
-            redisUtil.set(userId, null);
-        } else {
-//            定义2个list,一个用来存要删除的商家,一个用来存要删除的商品
-            List<Long> shopIds = new ArrayList<>();
-            List<Long> productIds = new ArrayList<>();
-            cart.getShopList().forEach(x -> {
-                if (x.getIsAll()) {
-                    shopIds.add(x.getShopId());
-                } else {
-                    x.getProductList().forEach(y -> {
-                        productIds.add(y.getProductId());
-                    });
-                }
-            });
-//            从服务器拿到购物车列表
-            Cart cartList = cartQueryService.getCartList(userId, false);
-//            删除商家
-            Iterator<ShopCart> shopCart = cartList.getShopList().iterator();
-            while (shopCart.hasNext()) {
-                ShopCart x = shopCart.next();
-                for (Long shopId : shopIds) {
-                    if (x.getShopId() == shopId) {
-                        shopCart.remove();
-                    }
-                }
-            }
-//            删除商品
-            for (ShopCart x : cartList.getShopList()) {
-                Iterator<ProductCart> productCart = x.getProductList().iterator();
-                while (productCart.hasNext()) {
-                    ProductCart y = productCart.next();
-                    for (Long productId : productIds) {
-                        if (y.getProductId() == productId) {
-                            productCart.remove();
-                        }
-                    }
-                }
-            }
-            //TODO:再检查一遍结构,防止前端传错数据导致shopCart里的productList为空
-//            刷新选中状态
-            if(!cartList.getCheck()) {
-                refreshCartCheck(cartList, 3);
-            }
-            System.out.println(cartList.toString());
-            redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cartList).toString());
-        }
-        return 0;
-    }
+	public Integer deleteProduct(String userId, List<Long> productIdList) {
+		Cart cart = null;
+//		与前端约定,只传来一个0为全部删除
+		if (productIdList.get(0) != 0) {
+			cart = cartQueryService.getCartList(userId, false);
+//      	删除商品
+			for (int i = cart.getShopList().size() - 1; i >= 0; i--) {
+				ShopCart shopCart = cart.getShopList().get(i);
+				for (int j = shopCart.getProductList().size() - 1; j >= 0; j--) {
+					ProductCart productCart = shopCart.getProductList().get(j);
+					for (Long productId : productIdList) {
+						if (productId == productCart.getProductId()) {
+//                    		过滤到失效的商品,从原list中移除
+							shopCart.getProductList().remove(j);
+						}
+					}
+				}
+//            	如果一个商家的所有商品都失效了,那么将这个商家移除
+				if (shopCart.getProductList().size() == 0) {
+					cart.getShopList().remove(i);
+				}
+			}
+//			如果所有商家都被移除了,那么购物车列表就为空
+			if (cart.getShopList().size() == 0) {
+				cart = null;
+			}
+		}
+		if(null==cart) {
+			redisUtil.delete(RedisConstant.REDIS_CART_PREFIX + userId);
+		}else {
+			redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cart).toString());
+		}
+		return null;
+	}
     
     @Override
     public Integer checkCart(Check check, String userId) {
@@ -353,5 +334,21 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
             break;
         }
     }
+
+	@Override
+	public Integer updateQuantity(Long shopId, Long productId, Integer quantity, String userId) {
+		Cart cart = cartQueryService.getCartList(userId, false);
+		cart.getShopList().forEach(x -> {
+			if (x.getShopId() == shopId) {
+				x.getProductList().forEach(y -> {
+					if (y.getProductId() == productId) {
+						y.setQuantity(y.getQuantity() + quantity);
+					}
+				});
+			}
+		});
+		redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cart).toString());
+		return 200;
+	}
 
 }

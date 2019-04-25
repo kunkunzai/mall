@@ -1,5 +1,6 @@
 package com.lk.mall.cart.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,7 @@ import com.lk.mall.cart.constant.RedisConstant;
 import com.lk.mall.cart.exception.ServicesNotConnectedException;
 import com.lk.mall.cart.feign.IProductService;
 import com.lk.mall.cart.model.Cart;
+import com.lk.mall.cart.model.ProductCart;
 import com.lk.mall.cart.model.ShopCart;
 import com.lk.mall.cart.model.response.ProductServiceResponse;
 import com.lk.mall.cart.service.ICartQueryService;
@@ -46,20 +48,54 @@ public class CartQueryServiceImpl implements ICartQueryService {
 		}
         Cart cart = JSONObject.parseObject(cartStr, Cart.class);
         if(isPopulate) {
-        	List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(cart);
-        	cart.getShopList().forEach(x -> {
-        		x.getProductList().forEach(y -> {
-        			productServiceResponse.forEach(z -> {
-        				if (y.getProductId() == z.getId()) {
-        					y.setProductImage(z.getSmallImage());
-        					y.setProductMoney(z.getSalePrice());
-        					y.setProductName(z.getName());
-        					y.setSubtitle(z.getDescription());
-        					x.setShopName(z.getShopName());
-        				}
-        			});
-        		});
-        	});
+//            填充商品信息
+        	List<ProductServiceResponse> productServiceResponseList = getProductServiceResponse(cart);
+        	BigDecimal orderMoney = BigDecimal.ZERO;
+            for (ShopCart shopCart : cart.getShopList()) {
+                BigDecimal shopMoney = BigDecimal.ZERO;
+                for (ProductCart productCart : shopCart.getProductList()) {
+                    for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
+                        if (productCart.getProductId() == productServiceResponse.getId()) {
+                            productCart.setProductImage(productServiceResponse.getSmallImage());
+                            productCart.setProductMoney(productServiceResponse.getSalePrice());
+                            productCart.setProductName(productServiceResponse.getName());
+                            productCart.setSubtitle(productServiceResponse.getDescription());
+                            productCart.setType(productServiceResponse.getType());
+                            productCart.setStatus(productServiceResponse.getStatus());
+                            if (1 == productServiceResponse.getStatus()) {
+                                productCart.setProductTotal(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
+                            }else {
+                                productCart.setProductTotal(BigDecimal.ZERO);
+                            }
+                            shopCart.setShopName(productServiceResponse.getShopName());
+                            shopMoney = shopMoney.add(productCart.getProductTotal());
+                        }
+                    }
+                }
+                shopCart.setShopMoney(shopMoney);
+                orderMoney = orderMoney.add(shopMoney);
+            }
+            cart.setOrderMoney(orderMoney);
+//        	  定义个list用来存放失效的商品
+            List<ProductCart> productList = new ArrayList<>();
+//            过滤一遍购物车,将过滤到失效的商品,将它放到用来存放失效的商品的list中,并且从原list中移除
+//            将list从大到小循环可以保证删除不报错
+            for (int i = cart.getShopList().size() - 1; i >= 0; i--) {
+                ShopCart shopCart = cart.getShopList().get(i);
+                for (int j = shopCart.getProductList().size() - 1; j >= 0; j--) {
+                    ProductCart productCart = shopCart.getProductList().get(j);
+                    if (2 == productCart.getStatus()) {
+//                        过滤到失效的商品,将它放到用来存放失效的商品的list中,并且从原list中移除
+                        productList.add(productCart);
+                        shopCart.getProductList().remove(j);
+                    }
+                }
+//                如果一个商家的所有商品都失效了,那么将这个商家移除
+                if (shopCart.getProductList().size() == 0) {
+                    cart.getShopList().remove(i);
+                }
+            }
+            cart.setLoseEfficacyList(productList);
         }
         return cart;
     }
