@@ -14,6 +14,8 @@ public interface IUserDisposeService {
 	
 	Integer cancelOrder(final Long userId, final String orderId);
 	
+	Integer confirmDelivery(final Long userId, final String orderId);
+	
 	Integer deleteOrder(final Long userId, final String orderId);
 	
 }

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.lk.mall.orders.Exception.OrderNotExistException;
 import com.lk.mall.orders.dao.IOrderItemDao;
@@ -121,6 +122,7 @@ public class UserQueryServiceImpl implements IUserQueryService {
 	}
 
 	@Override
+	@Transactional
 	public Orders findOrderByOrderId(String orderId) {
 		Orders orders = null;
 		CompletableFuture<List<OrderItem>> orderItemList = CompletableFuture

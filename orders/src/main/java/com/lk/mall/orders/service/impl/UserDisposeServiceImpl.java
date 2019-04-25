@@ -25,7 +25,9 @@ import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
 import com.lk.mall.orders.model.response.ProductServiceResponse;
 import com.lk.mall.orders.model.vo.PaymentVO;
+import com.lk.mall.orders.model.vo.ProductVO;
 import com.lk.mall.orders.model.vo.SettlementVO;
+import com.lk.mall.orders.model.vo.ShopVO;
 import com.lk.mall.orders.service.IUserDisposeService;
 import com.lk.mall.orders.utils.CollectorsUtils;
 
@@ -42,12 +44,15 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	
 	@Override
 	public SettlementVO settle(SettlementVO settlementVO) {
-		List<ProductServiceResponse> productServiceResponse = getProductServiceResponse(settlementVO);
-		populateSettlementVO(settlementVO, productServiceResponse);
+//	    得到商品信息
+		List<ProductServiceResponse> productServiceResponseList = getProductServiceResponse(settlementVO);
+//		填充结算信息
+		populateSettlementVO(settlementVO, productServiceResponseList);
 		return settlementVO;
 	}
 	
 	private List<ProductServiceResponse> getProductServiceResponse(SettlementVO settlementVO) {
+//	    取出所有商品ID
 		List<Long> list = new ArrayList<>();
 		settlementVO.getShopList().forEach(x -> x.getProductList().forEach(y -> list.add(y.getProductId())));
 		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
@@ -56,24 +61,35 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 		return productList;
 	}
 
-	private void populateSettlementVO(SettlementVO settlementVO, List<ProductServiceResponse> productServiceResponse) {
-		settlementVO.getShopList().forEach(x -> {
-			x.getProductList().forEach(y -> {
-				productServiceResponse.forEach(z -> {
-					if (y.getProductId() == z.getId()) {
-						y.setProductImage(z.getSmallImage());
-						y.setProductMoney(z.getSalePrice());
-						y.setProductName(z.getName());
-						y.setProductSubtitle(z.getDescription());
-						y.setProductType(z.getType());
-						y.setTotalMoney(y.getProductAllMoney());
-					}
-				});
-			});
-			x.setTotalMoney(x.getShopMoney());
-		});
-		settlementVO.setOrderMoney(settlementVO.getShopAllMoney());
-	}
+	/**
+	 * 填充结算信息
+	 * @param settlementVO
+	 * @param productServiceResponseList
+	 */
+    private void populateSettlementVO(SettlementVO settlementVO, List<ProductServiceResponse> productServiceResponseList) {
+        BigDecimal orderMoney = BigDecimal.ZERO;
+        for (ShopVO shopVO : settlementVO.getShopList()) {
+            BigDecimal shopMoney = BigDecimal.ZERO;
+            for (ProductVO productVO : shopVO.getProductList()) {
+                for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
+                    if (productVO.getProductId() == productServiceResponse.getId()) {
+                        productVO.setProductImage(productServiceResponse.getSmallImage());
+                        productVO.setProductMoney(productServiceResponse.getSalePrice());
+                        productVO.setProductName(productServiceResponse.getName());
+                        productVO.setProductSubtitle(productServiceResponse.getDescription());
+                        productVO.setProductType(productServiceResponse.getType());
+                        productVO.setTotalMoney(productVO.getProductMoney().multiply(new BigDecimal(productVO.getQuantity())));
+                        shopMoney = shopMoney.add(productVO.getTotalMoney());
+                        shopVO.setShopName(productServiceResponse.getShopName());
+                        shopVO.setShopType(productServiceResponse.getType());
+                    }
+                }
+            }
+            shopVO.setShopMoney(shopMoney);
+            orderMoney = orderMoney.add(shopMoney);
+        }
+        settlementVO.setOrderMoney(orderMoney);
+    }
 
 	@Override
 	@Transactional
@@ -87,8 +103,14 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 //		//  创建预支付信息
 		createPreparePayment(orders);
 //		//	将剩余没填充的信息填充进order
-		resolveOrder(orders);
+		populateOrder(orders);
 
+		/**
+		 * 用mq解决分布式事务?
+		 * 1.插入DB
+		 * 2.锁库存
+		 * 3.更新购物车
+		 */
 //		insert date base
 		orderItemDao.saveAll(orders.getOrderItemList());
 		ordersDao.save(orders);
@@ -115,6 +137,9 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 					y.setProductType(x.getType());
 					y.setShopId(x.getShopId());
 					y.setShopName(x.getShopName());
+					y.setProductMoney(x.getSalePrice());
+					y.setShopType(x.getShopType());
+					y.setTotalMoney(x.getSalePrice().multiply(new BigDecimal(y.getQuantity())));
 				}
 			});
 		});
@@ -146,18 +171,19 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	}
 
 //	将剩余没填充的信息填充进order
-	private void resolveOrder(Orders orders) {
+	private void populateOrder(Orders orders) {
 		orders.setIsDelete(1);
 		orders.setOrderStatus(5);
 	}
 
 	@Override
+    @Transactional
 	public Integer pay(PaymentVO paymentVO) {
 		Orders orders = verifyOrder(paymentVO);
 		orders.setOrderStatus(8);
 		orders.setTradeId(paymentVO.getTradeId());
 		orders.setPayTime(LocalDateTime.now());
-		ordersDao.saveAndFlush(orders);
+		ordersDao.save(orders);
 		payFinish(orders, paymentVO);
 		if (orders.getSplitFlag() == 200) {
 			separateOrders(orders);
@@ -220,9 +246,11 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 			newOrders.setIsDelete(1);
 			newOrders.setCreateTime(orders.getCreateTime());
 			ordersList.add(newOrders);
+			LocalDateTime now = LocalDateTime.now();
 			productList.forEach(y -> {
 				if (x.getKey() == y.getShopId()) {
 					y.setOrderId(uuid);
+					y.setUpdateTime(now);
 				}
 			});
 		});
@@ -241,6 +269,7 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	}
 	
     @Override
+    @Transactional
     public Integer cancelOrder(Long userId, String orderId) {
         Orders orders = ordersDao.findByOrderId(orderId);
         if (userId != orders.getUserId()) {
@@ -259,8 +288,27 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
         ordersDao.saveAndFlush(orders);
         return 200;
     }
+    
+    @Override
+    @Transactional
+    public Integer confirmDelivery(Long userId, String orderId) {
+        Orders orders = ordersDao.findByOrderId(orderId);
+        if (userId != orders.getUserId()) {
+            System.out.println("不是本人操作");
+            return 100;
+        }
+        if (10 != orders.getOrderStatus()) {
+            System.out.println("目前不可确认收货");
+            return 100;
+        }
+        orders.setOrderStatus(15);
+        orders.setUserReceiveTime(LocalDateTime.now());
+        ordersDao.saveAndFlush(orders);
+        return 200;
+    }
 
     @Override
+    @Transactional
     public Integer deleteOrder(Long userId, String orderId) {
         Orders orders = ordersDao.findByOrderId(orderId);
         if (userId != orders.getUserId()) {

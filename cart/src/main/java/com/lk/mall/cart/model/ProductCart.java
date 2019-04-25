@@ -23,7 +23,7 @@ public class ProductCart implements Serializable, Cloneable {
     private String productImage;
     private String subtitle;
     private BigDecimal productMoney;
-    private BigDecimal productTotal;
+    private BigDecimal totalMoney;
     private Integer stock;
 
     public ProductCart(Long productId, Integer quantity, Boolean check) {

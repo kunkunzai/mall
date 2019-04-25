@@ -168,8 +168,8 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
 	}
     
     @Override
-    public Integer checkCart(Check check, String userId) {
-        Cart cart = cartQueryService.getCartList(userId, false);
+    public Integer checkCart(Check check) {
+        Cart cart = cartQueryService.getCartList(check.getUserId(), false);
         Boolean checkStatus = check.getCheckStatus();
         Boolean checkAll = check.getCheckAll();
         if (null != checkAll) {
@@ -219,7 +219,7 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
                 }
             }
         }
-        redisUtil.set(RedisConstant.REDIS_CART_PREFIX + userId, JSON.toJSON(cart).toString());
+        redisUtil.set(RedisConstant.REDIS_CART_PREFIX + check.getUserId(), JSON.toJSON(cart).toString());
         return null;
     }
     

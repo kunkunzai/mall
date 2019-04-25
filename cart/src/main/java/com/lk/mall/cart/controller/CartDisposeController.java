@@ -47,8 +47,8 @@ public class CartDisposeController {
      * @return
      */
     @RequestMapping("/checkCart")
-    public Object checkCart(@RequestParam("userId") String userId, @Valid @RequestBody Check check) {
-    	cartDisposeService.checkCart(check, userId);
+    public Object checkCart(@Valid @RequestBody Check check) {
+    	cartDisposeService.checkCart(check);
         return 200;
     }
     

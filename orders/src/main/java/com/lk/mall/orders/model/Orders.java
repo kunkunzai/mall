@@ -1,7 +1,6 @@
 package com.lk.mall.orders.model;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,7 +44,9 @@ public class Orders {
 	private Long userId;
 	private String receiver;
 	private String mobile;
+	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime orderTime;
+	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime payTime;;
 	private BigDecimal orderMoney;
 	private BigDecimal refundMoney;
@@ -54,9 +55,12 @@ public class Orders {
 	private String address;
 	private String zipCode;
 	private Integer splitFlag;
+	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime proCycleTime;
+	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private LocalDateTime proCycleTimeEnd;
-	private Timestamp userReceiveTime;
+	@DateTimeFormat(iso = ISO.DATE_TIME)
+	private LocalDateTime userReceiveTime;
 	private String logisticsCompany;
 	private String logisticsCompanyCode;
 	private String logisticsNo;

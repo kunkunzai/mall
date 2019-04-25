@@ -20,7 +20,7 @@ public interface ICartDisposeService {
 	 * @param cart
 	 * @return
 	 */
-	Integer checkCart(Check check, String userId);
+	Integer checkCart(Check check);
 	
 	/**
 	 * 添加商品数量

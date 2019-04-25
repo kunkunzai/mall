@@ -2,6 +2,7 @@ package com.lk.mall.cart.model;
 
 import java.io.Serializable;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -21,5 +22,7 @@ public class Check implements Serializable, Cloneable {
 	private Boolean checkAll;
 	private Long shopId;
 	private Long productId;
+	@NotEmpty(message="用户id不能为空")
+	private String userId;
 	
 }

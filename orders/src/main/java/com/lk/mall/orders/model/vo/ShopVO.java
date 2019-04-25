@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import javax.persistence.Embedded;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -18,16 +19,9 @@ public class ShopVO {
 	private Long shopId;
 	private String shopName;
 	private Integer shopType;
-	private BigDecimal totalMoney;
+	private BigDecimal shopMoney;
 	@Embedded
 	@NotEmpty(message = "商品明细不能为空")
+	@Valid
 	private List<ProductVO> productList;
-	
-	public BigDecimal getShopMoney() {
-		BigDecimal b = BigDecimal.ZERO;
-		for (ProductVO itemVO : productList) {
-			b = b.add(itemVO.getProductAllMoney());
-		}
-		return b;
-	}
 }

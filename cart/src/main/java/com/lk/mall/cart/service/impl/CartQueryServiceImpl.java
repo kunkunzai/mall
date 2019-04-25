@@ -32,7 +32,7 @@ public class CartQueryServiceImpl implements ICartQueryService {
     public Integer getCartMark(String userId) {
         Cart cart = getCartList(userId, false);
 		int sum = 0;
-		if (cart.getShopList() != null) {
+        if (null != cart && null != cart.getShopList()) {
 			for (ShopCart shopCart : cart.getShopList()) {
 				sum += shopCart.getProductListSize();
 			}
@@ -63,12 +63,12 @@ public class CartQueryServiceImpl implements ICartQueryService {
                             productCart.setType(productServiceResponse.getType());
                             productCart.setStatus(productServiceResponse.getStatus());
                             if (1 == productServiceResponse.getStatus()) {
-                                productCart.setProductTotal(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
+                                productCart.setTotalMoney(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
                             }else {
-                                productCart.setProductTotal(BigDecimal.ZERO);
+                                productCart.setTotalMoney(BigDecimal.ZERO);
                             }
                             shopCart.setShopName(productServiceResponse.getShopName());
-                            shopMoney = shopMoney.add(productCart.getProductTotal());
+                            shopMoney = shopMoney.add(productCart.getTotalMoney());
                         }
                     }
                 }
