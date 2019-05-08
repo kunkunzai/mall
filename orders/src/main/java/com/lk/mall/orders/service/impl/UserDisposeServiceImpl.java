@@ -7,10 +7,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
+import org.redisson.api.RAtomicLongAsync;
+import org.redisson.api.RFuture;
+import org.redisson.api.RList;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +25,13 @@ import com.lk.mall.orders.Exception.IllegalPriceException;
 import com.lk.mall.orders.Exception.OrderNotExistException;
 import com.lk.mall.orders.Exception.OrderStatusException;
 import com.lk.mall.orders.Exception.ServicesNotConnectedException;
+import com.lk.mall.orders.constant.RedisConstant;
 import com.lk.mall.orders.dao.IOrderItemDao;
 import com.lk.mall.orders.dao.IOrdersDao;
 import com.lk.mall.orders.feign.IProductService;
 import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
+import com.lk.mall.orders.model.Qualification;
 import com.lk.mall.orders.model.response.ProductServiceResponse;
 import com.lk.mall.orders.model.vo.PaymentVO;
 import com.lk.mall.orders.model.vo.ProductVO;
@@ -41,6 +50,8 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	private IOrdersDao ordersDao;
 	@Autowired
 	private IOrderItemDao orderItemDao;
+    @Autowired
+    private RedissonClient redissonClient;
 	
 	@Override
 	public SettlementVO settle(SettlementVO settlementVO) {
@@ -322,6 +333,54 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
         orders.setIsDelete(2);
         ordersDao.saveAndFlush(orders);
         return 200;
+    }
+
+    @Override
+    public String freezeOrder(String userId, String productId, String activityId) {
+        String key = RedisConstant.REDIS_LOCK_PREFIX + activityId + ":" + productId;
+//      验证库存
+        RAtomicLongAsync stock = redissonClient.getAtomicLong(key);
+        System.out.println("抢购key:" + key + ",库存:" + stock);
+        if (Integer.parseInt(stock.toString()) <= 0) {
+            System.out.println("库存不足");
+            return "库存不足";
+        }
+//      判断是否是再次抢购
+        RList<Qualification> qualificationList = redissonClient.getList("activityId_" + activityId);
+        for (Qualification qualification : qualificationList) {
+            if (qualification.getUserId().equals(userId) && qualification.getProductId().equals(productId)) {
+                System.out.println("不能重复抢购");
+                return "不能重复抢购";
+            }
+        }
+        boolean res = false;
+        RLock lock = redissonClient.getLock("anyLock");
+        while (true) {
+//          执行抢购逻辑
+            try {
+//              上锁1秒
+                lock.lock(1, TimeUnit.SECONDS);
+//              看门狗,1秒后开始计时
+//              只要客户端一旦加锁成功，就会启动一个watch dog看门狗，他是一个后台线程，会每隔1秒检查一下，如果客户端还持有锁key，那么就会不断的延长锁key的生存时间。
+                res = lock.tryLock(0, 1, TimeUnit.SECONDS);
+                if (res) {
+                    if (Integer.parseInt(redissonClient.getAtomicLong(key).toString()) <= 0) {
+                        System.out.println("库存不足");
+                        return "库存不足";
+                    }
+                    RFuture<Long> decrementAndGetAsync = stock.decrementAndGetAsync();
+                    System.out.println("抢购后库存:" + decrementAndGetAsync.get().longValue());
+                    Qualification qualification = new Qualification(1, productId, userId);
+                    List<Qualification> list = redissonClient.getList("activityId_" + activityId);
+                    list.add(qualification);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+            return "成功";
+        }
     }
 
 }

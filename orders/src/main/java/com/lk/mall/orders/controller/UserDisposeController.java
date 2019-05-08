@@ -133,5 +133,13 @@ public class UserDisposeController {
     public Integer deleteOrder(@RequestParam("userId") Long userId, @RequestParam("orderId") String orderId) {
         return userDisposeService.deleteOrder(userId, orderId);
     }
+    
+    @RequestMapping("/freezeOrder")
+    public String freezeOrder(
+            @RequestParam("userId") String userId, 
+            @RequestParam("productId") String productId, 
+            @RequestParam("activityId") String activityId) {
+        return userDisposeService.freezeOrder(userId, productId, activityId);
+    }
 
 }

@@ -18,4 +18,6 @@ public interface IUserDisposeService {
 	
 	Integer deleteOrder(final Long userId, final String orderId);
 	
+	String freezeOrder(String userId, String productId, String activityId);
+	
 }
