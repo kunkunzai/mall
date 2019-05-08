@@ -11,9 +11,7 @@ import com.lk.mall.orders.model.response.ProductServiceResponse;
 
 @FeignClient(value = "service-product")
 public interface IProductService {
-    @RequestMapping(value = "/findByProductId",method = RequestMethod.GET)
-    ProductServiceResponse findByProductId(@RequestParam(value = "productId") Long productId);
     
-    @RequestMapping(value = "/findAllByProductId",method = RequestMethod.GET)
-    List<ProductServiceResponse> findAllByProductId(@RequestParam(value = "productIdList") List<Long> productIdList);
+    @RequestMapping(value = "/findGoodsDetail",method = RequestMethod.GET)
+    List<ProductServiceResponse> findGoodsDetail(@RequestParam(value = "goodsIds") List<Long> goodsIds);
 }

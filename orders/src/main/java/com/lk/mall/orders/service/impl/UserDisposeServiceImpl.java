@@ -66,7 +66,7 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 //	    取出所有商品ID
 		List<Long> list = new ArrayList<>();
 		settlementVO.getShopList().forEach(x -> x.getProductList().forEach(y -> list.add(y.getProductId())));
-		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
+		List<ProductServiceResponse> productList = productService.findGoodsDetail(list);
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 //		System.out.println(productList.toString());
 		return productList;
@@ -85,7 +85,7 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
                 for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
                     if (productVO.getProductId() == productServiceResponse.getId()) {
                         productVO.setProductImage(productServiceResponse.getSmallImage());
-                        productVO.setProductMoney(productServiceResponse.getSalePrice());
+                        productVO.setProductMoney(productServiceResponse.getPrice());
                         productVO.setProductName(productServiceResponse.getName());
                         productVO.setProductSubtitle(productServiceResponse.getDescription());
                         productVO.setProductType(productServiceResponse.getType());
@@ -132,7 +132,7 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	private List<ProductServiceResponse> getProductServiceResponse(Orders orders) {
 		List<Long> list = new ArrayList<>();
 		orders.getOrderItemList().stream().forEach(x -> list.add(x.getProductId()));
-		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
+		List<ProductServiceResponse> productList = productService.findGoodsDetail(list);
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 		return productList;
 	}
@@ -148,9 +148,9 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 					y.setProductType(x.getType());
 					y.setShopId(x.getShopId());
 					y.setShopName(x.getShopName());
-					y.setProductMoney(x.getSalePrice());
+					y.setProductMoney(x.getPrice());
 					y.setShopType(x.getShopType());
-					y.setTotalMoney(x.getSalePrice().multiply(new BigDecimal(y.getQuantity())));
+					y.setTotalMoney(x.getPrice().multiply(new BigDecimal(y.getQuantity())));
 				}
 			});
 		});
@@ -162,9 +162,9 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
         for (ProductServiceResponse product : productServiceResponse) {
             for (OrderItem orderItem : orders.getOrderItemList()) {
                 if (product.getId() == orderItem.getProductId()) {
-                    if (product.getSalePrice().compareTo(orderItem.getProductMoney()) != 0) {
-                        System.err.println("商品:" + product.getId() + " 期盼的金额：" + product.getSalePrice() + ",实际的价格："+ orderItem.getProductMoney());
-                        throw new IllegalPriceException(product.getSalePrice(), orderItem.getProductMoney());
+                    if (product.getPrice().compareTo(orderItem.getProductMoney()) != 0) {
+                        System.err.println("商品:" + product.getId() + " 期盼的金额：" + product.getPrice() + ",实际的价格："+ orderItem.getProductMoney());
+                        throw new IllegalPriceException(product.getPrice(), orderItem.getProductMoney());
                     }
                     expectantTotalPrice = expectantTotalPrice.add(orderItem.getProductMoney().multiply(BigDecimal.valueOf(orderItem.getQuantity())));
                 }

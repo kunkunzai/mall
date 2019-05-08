@@ -15,11 +15,8 @@ public class ProductServiceResponse {
 	private String smallImage;
 	private String model;
 	private Integer status;
-	private BigDecimal originalPrice;
-	private BigDecimal salePrice;
+	private BigDecimal price;
 	private String description;
-	private String currentItem;
-	private String relevantItem;
 	private String shopName;
 }
 

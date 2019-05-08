@@ -57,7 +57,7 @@ public class CartQueryServiceImpl implements ICartQueryService {
                     for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
                         if (productCart.getProductId() == productServiceResponse.getId()) {
                             productCart.setProductImage(productServiceResponse.getSmallImage());
-                            productCart.setProductMoney(productServiceResponse.getSalePrice());
+                            productCart.setProductMoney(productServiceResponse.getPrice());
                             productCart.setProductName(productServiceResponse.getName());
                             productCart.setSubtitle(productServiceResponse.getDescription());
                             productCart.setType(productServiceResponse.getType());
@@ -84,7 +84,7 @@ public class CartQueryServiceImpl implements ICartQueryService {
                 ShopCart shopCart = cart.getShopList().get(i);
                 for (int j = shopCart.getProductList().size() - 1; j >= 0; j--) {
                     ProductCart productCart = shopCart.getProductList().get(j);
-                    if (2 == productCart.getStatus()) {
+					if (null == productCart.getStatus() || 2 == productCart.getStatus()) {
 //                        过滤到失效的商品,将它放到用来存放失效的商品的list中,并且从原list中移除
                         productList.add(productCart);
                         shopCart.getProductList().remove(j);
@@ -108,7 +108,7 @@ public class CartQueryServiceImpl implements ICartQueryService {
 				list.add(y.getProductId());
 			});
 		});
-		List<ProductServiceResponse> productList = productService.findAllByProductId(list);
+		List<ProductServiceResponse> productList = productService.findGoodsDetail(list);
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 		return productList;
 	}
