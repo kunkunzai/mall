@@ -16,7 +16,6 @@ public class ProductCart implements Serializable, Cloneable {
 
     private Long productId;
     private Integer quantity;
-    private Integer type;
     private Integer status;
     private Boolean check;
     private String productName;

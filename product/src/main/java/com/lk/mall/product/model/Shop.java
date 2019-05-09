@@ -28,7 +28,7 @@ public class Shop {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	@NotNull(message="店铺类型不能为空")
-	private Integer type;
+	private Integer directoryId;
 	@NotEmpty(message="店铺名称不能为空")
 	private String name;
 	private String logo;

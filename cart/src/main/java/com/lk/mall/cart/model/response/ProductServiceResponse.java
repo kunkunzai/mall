@@ -12,11 +12,12 @@ public class ProductServiceResponse {
 	private Long shopId;
 	private Integer type;
 	private String name;
-	private String smallImage;
+	private String image;
 	private String model;
 	private Integer status;
 	private BigDecimal price;
 	private String description;
 	private String shopName;
+	private Integer stock;
 }
 

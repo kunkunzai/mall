@@ -1,5 +1,6 @@
 package com.lk.mall.product.model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
+import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -41,8 +43,13 @@ public class Product {
     @NotEmpty(message="商品描述不能为空")
     private String description;
     private String code;
+    @NotEmpty(message="商品图片不能为空")
+    private String image;
     @NotNull(message="商家id不能为空")
     private Long shopId;
+    @NotNull(message="商品价格不能为空")
+    @DecimalMin(value = "0.01")
+    private BigDecimal price;
     private Integer status;
     @Transient
     @Valid

@@ -17,5 +17,7 @@ public class GoodsVO {
     private String description;
     private String code;
     private Long shopId;
+    private String shopName;
     private Integer status;
+    private String image;
 }

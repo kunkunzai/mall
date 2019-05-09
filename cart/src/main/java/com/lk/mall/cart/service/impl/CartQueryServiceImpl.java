@@ -56,12 +56,12 @@ public class CartQueryServiceImpl implements ICartQueryService {
                 for (ProductCart productCart : shopCart.getProductList()) {
                     for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
                         if (productCart.getProductId() == productServiceResponse.getId()) {
-                            productCart.setProductImage(productServiceResponse.getSmallImage());
+                            productCart.setProductImage(productServiceResponse.getImage());
                             productCart.setProductMoney(productServiceResponse.getPrice());
                             productCart.setProductName(productServiceResponse.getName());
                             productCart.setSubtitle(productServiceResponse.getDescription());
-                            productCart.setType(productServiceResponse.getType());
                             productCart.setStatus(productServiceResponse.getStatus());
+                            productCart.setStock(productServiceResponse.getStock());
                             if (1 == productServiceResponse.getStatus()) {
                                 productCart.setTotalMoney(productCart.getProductMoney().multiply(new BigDecimal(productCart.getQuantity())));
                             }else {
