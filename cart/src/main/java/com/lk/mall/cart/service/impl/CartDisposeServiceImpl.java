@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
 import com.lk.mall.cart.constant.RedisConstant;
+import com.lk.mall.cart.exception.CartSaturationException;
 import com.lk.mall.cart.model.Cart;
 import com.lk.mall.cart.model.Check;
 import com.lk.mall.cart.model.ProductCart;
@@ -19,6 +22,7 @@ import com.lk.mall.cart.service.ICartQueryService;
 import com.lk.mall.cart.utils.RedisUtil;
 
 @Service
+@PropertySource({"classpath:system.properties"})
 public class CartDisposeServiceImpl implements ICartDisposeService {
 
     @Autowired
@@ -26,6 +30,9 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
     
     @Autowired
     private ICartQueryService cartQueryService;
+    
+    @Value("${cart.product.quantity.limit}")
+    private Integer quantityLimit;
 
     @Override
     public Integer addCart(ShopCart newShopCart, String userId) {
@@ -35,6 +42,17 @@ public class CartDisposeServiceImpl implements ICartDisposeService {
         int shopFlag = location.get("shopFlag");
         int productFlag = location.get("productFlag");
         int quantity = location.get("quantity");
+//      当该用户的购物车里的商品数量达到最大值时,禁止继续加入
+        if (status == 1 || status == 2) {
+            int sum = 0;
+            for (ShopCart shopCart : cart.getShopList()) {
+                sum += shopCart.getProductListSize();
+            }
+            if (sum >= quantityLimit) {
+                System.out.println("购物车已满");
+                throw new CartSaturationException(quantityLimit);
+            }
+        }
         /**
          * 4种情况,分为4种处理 
          * status==0,购物车为空，只需要在列表首位新增一个新的ShopCart即可
