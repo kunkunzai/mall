@@ -12,6 +12,8 @@ import javax.transaction.Transactional;
 import org.redisson.api.RList;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import com.lk.mall.product.constant.RedisConstant;
@@ -19,6 +21,7 @@ import com.lk.mall.product.dao.IGoodsDao;
 import com.lk.mall.product.dao.IGoodsValueDao;
 import com.lk.mall.product.dao.IProductDao;
 import com.lk.mall.product.dao.IProductPropDao;
+import com.lk.mall.product.exception.CollectSaturationException;
 import com.lk.mall.product.model.Collect;
 import com.lk.mall.product.model.Goods;
 import com.lk.mall.product.model.GoodsValue;
@@ -28,6 +31,7 @@ import com.lk.mall.product.model.vo.CollectVO;
 import com.lk.mall.product.service.IProductService;
 
 @Service
+@PropertySource({"classpath:system.properties"})
 public class ProductServiceImpl implements IProductService{
     
     @Autowired
@@ -40,6 +44,8 @@ public class ProductServiceImpl implements IProductService{
     private IProductPropDao productPropDao;
     @Autowired
     private RedissonClient redissonClient;
+    @Value("${collect.product.quantity.limit}")
+    private Integer quantityLimit;
 
     @Override
     public List<Product> findByShopId(Long shopId) {
@@ -114,7 +120,10 @@ public class ProductServiceImpl implements IProductService{
 //            存在
 //                收藏操作
                 if (!list.contains(latestCollect)) {
-                    list.add(latestCollect);
+					if (list.size() >= quantityLimit) {
+						throw new CollectSaturationException(quantityLimit);
+					}
+					list.add(0, latestCollect);
                 }
             } else {
 //                取消收藏
