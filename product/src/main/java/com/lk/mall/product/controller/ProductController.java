@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lk.mall.product.model.Product;
-import com.lk.mall.product.model.vo.CollectVO;
 import com.lk.mall.product.service.IProductService;
 
 
@@ -40,14 +39,4 @@ public class ProductController {
         return productService.updateProductStatus(productId, status);
     }
     
-    @RequestMapping("/collectProduct")
-    public Integer collectGoods(@RequestParam Long productId, @RequestParam Long userId, @RequestParam Integer type) {
-        return productService.collectProduct(productId, userId, type);
-    }
-    
-    @RequestMapping("/findCollectVOList")
-    public List<CollectVO> findCollectVOList(@RequestParam Long userId) {
-        return productService.findCollectVOList(userId);
-    }
-
 }

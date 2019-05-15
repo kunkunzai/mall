@@ -14,8 +14,10 @@ import lombok.ToString;
 public class CollectVO {
 
     private Long productId;
+    private Long goodsId;
     private BigDecimal price;
     private String name;
+    private String image;
     private Integer collectNum;
     
 }
