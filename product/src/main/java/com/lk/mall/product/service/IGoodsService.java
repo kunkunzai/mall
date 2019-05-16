@@ -12,6 +12,8 @@ public interface IGoodsService {
     
     List<GoodsVO> findGoodsDetail(List<Long> goodsIds);
     
+    Integer collectGoodsQuantity(Long userId);
+    
     Integer collectGoods(Long goodsId, Long userId, Integer type);
     
     List<CollectVO> findCollectVOList(Long userId);

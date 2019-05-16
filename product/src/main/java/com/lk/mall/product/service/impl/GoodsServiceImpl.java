@@ -122,6 +122,13 @@ public class GoodsServiceImpl implements IGoodsService{
         }
         return goodsVOList;
     }
+
+	@Override
+	public Integer collectGoodsQuantity(Long userId) {
+		String key = RedisConstant.COLLECT_PRODUCT_PREFIX + userId;
+		List<Object> list = redisUtil.lGet(key, 0, -1);
+		return list.size();
+	}
     
     @Override
     public Integer collectGoods(Long goodsId, Long userId, Integer type) {
