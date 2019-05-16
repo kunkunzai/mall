@@ -133,6 +133,7 @@ public class GoodsServiceImpl implements IGoodsService{
     @Override
     public Integer collectGoods(Long goodsId, Long userId, Integer type) {
         String key = RedisConstant.COLLECT_PRODUCT_PREFIX + userId;
+        String userList = RedisConstant.PRODUCT_SET_PREFIX + goodsId;
         List<Object> list = redisUtil.lGet(key, 0, -1);
         if (!list.isEmpty()) {
             List<Long> newList = new ArrayList<>(list.size());
@@ -147,17 +148,20 @@ public class GoodsServiceImpl implements IGoodsService{
                         throw new CollectSaturationException(quantityLimit);
                     }
                     redisUtil.lSet(key, goodsId);
+                    redisUtil.sSet(userList, userId);
                 }
             } else {
 //                取消收藏
                 if (newList.contains(goodsId)) {
                     redisUtil.lRemove(key, 1, goodsId);
+                    redisUtil.setRemove(userList, userId);
                 }
             }
         } else {
 //            不存在
             if (type == 1) {
                 redisUtil.lSet(key, goodsId);
+                redisUtil.sSet(userList, userId);
             }
         }
         return 200;
@@ -191,4 +195,11 @@ public class GoodsServiceImpl implements IGoodsService{
         }
         return null;
     }
+
+	@Override
+	public Long findCollectUserQuantity(Long goodsId) {
+		String key = RedisConstant.PRODUCT_SET_PREFIX + goodsId;
+		long size = redisUtil.sGetSetSize(key);
+		return size;
+	}
 }

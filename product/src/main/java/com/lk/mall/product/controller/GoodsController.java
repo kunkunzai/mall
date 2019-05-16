@@ -35,6 +35,11 @@ public class GoodsController {
         return goodsService.collectGoodsQuantity(userId);
     }
     
+    @RequestMapping("/findCollectUserQuantity")
+    public Long findCollectUserQuantity(@RequestParam Long goodsId) {
+        return goodsService.findCollectUserQuantity(goodsId);
+    }
+    
     @RequestMapping("/collectGoods")
     public Integer collectGoods(@RequestParam Long goodsId, @RequestParam Long userId, @RequestParam Integer type) {
         return goodsService.collectGoods(goodsId, userId, type);
