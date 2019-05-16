@@ -13,8 +13,7 @@ public class RedissonConfig {
     public RedissonClient getRedisson(){
         Config config = new Config();
         //单机模式  依次设置redis地址和密码
-        config.useSingleServer().
-                setAddress("redis://localhost:6379");
+		config.useSingleServer().setAddress("redis://localhost:6379").setDatabase(2);
         return Redisson.create(config);
     }
 }
