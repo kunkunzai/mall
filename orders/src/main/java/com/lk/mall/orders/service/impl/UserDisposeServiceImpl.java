@@ -39,6 +39,7 @@ import com.lk.mall.orders.model.vo.SettlementVO;
 import com.lk.mall.orders.model.vo.ShopVO;
 import com.lk.mall.orders.service.IUserDisposeService;
 import com.lk.mall.orders.utils.CollectorsUtils;
+import com.lk.mall.orders.utils.RedisUtil;
 
 @Service
 public class UserDisposeServiceImpl implements IUserDisposeService {
@@ -52,6 +53,8 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 	private IOrderItemDao orderItemDao;
     @Autowired
     private RedissonClient redissonClient;
+    @Autowired
+    private RedisUtil redisUtil;
 	
 	@Override
 	public SettlementVO settle(SettlementVO settlementVO) {
@@ -67,6 +70,9 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 		List<Long> list = new ArrayList<>();
 		settlementVO.getShopList().forEach(x -> x.getProductList().forEach(y -> list.add(y.getProductId())));
 		List<ProductServiceResponse> productList = productService.findGoodsDetail(list);
+        if (list.size() > productList.size()) {
+            return null;
+        }
 		Optional.ofNullable(productList).orElseThrow(() -> new ServicesNotConnectedException());
 //		System.out.println(productList.toString());
 		return productList;
@@ -84,15 +90,13 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
             for (ProductVO productVO : shopVO.getProductList()) {
                 for (ProductServiceResponse productServiceResponse : productServiceResponseList) {
                     if (productVO.getProductId() == productServiceResponse.getId()) {
-                        productVO.setProductImage(productServiceResponse.getSmallImage());
+                        productVO.setProductImage(productServiceResponse.getImage());
                         productVO.setProductMoney(productServiceResponse.getPrice());
                         productVO.setProductName(productServiceResponse.getName());
                         productVO.setProductSubtitle(productServiceResponse.getDescription());
-                        productVO.setProductType(productServiceResponse.getType());
                         productVO.setTotalMoney(productVO.getProductMoney().multiply(new BigDecimal(productVO.getQuantity())));
                         shopMoney = shopMoney.add(productVO.getTotalMoney());
                         shopVO.setShopName(productServiceResponse.getShopName());
-                        shopVO.setShopType(productServiceResponse.getType());
                     }
                 }
             }
@@ -143,7 +147,7 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 			orders.getOrderItemList().stream().forEach(y -> {
 				if (x.getId() == y.getProductId()) {
 					y.setProductName(x.getName());
-					y.setProductImage(x.getSmallImage());
+					y.setProductImage(x.getImage());
 					y.setProductSubtitle(x.getDescription());
 					y.setProductType(x.getType());
 					y.setShopId(x.getShopId());
@@ -196,6 +200,13 @@ public class UserDisposeServiceImpl implements IUserDisposeService {
 		orders.setPayTime(LocalDateTime.now());
 		ordersDao.save(orders);
 		payFinish(orders, paymentVO);
+		if (null == orders.getOrderItemList() || orders.getOrderItemList().size() == 0) {
+		    List<OrderItem> findByOrderId = orderItemDao.findByOrderId(orders.getOrderId());
+		    orders.setOrderItemList(findByOrderId);
+		}
+		orders.getOrderItemList().forEach(x -> {
+		    redisUtil.zIncrementScore(RedisConstant.REDIS_PRODUCT_RANKING_LIST, x.getProductId(), x.getQuantity());
+		});
 		if (orders.getSplitFlag() == 200) {
 			separateOrders(orders);
 		}

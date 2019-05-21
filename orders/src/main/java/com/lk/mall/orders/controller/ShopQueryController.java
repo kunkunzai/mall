@@ -30,5 +30,11 @@ public class ShopQueryController {
 
         return shopQueryService.findOrderListByShopId(shopId, status, page, size);
     }
+    
+    @RequestMapping("/findRankingList")
+    public Object findRankingList(@RequestParam(value = "start", defaultValue = "1") Integer start,
+            @RequestParam(value = "end", defaultValue = "5") Integer end) {
+        return shopQueryService.findRankingList(start, end);
+    }
 
 }

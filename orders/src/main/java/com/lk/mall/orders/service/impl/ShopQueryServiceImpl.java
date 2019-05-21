@@ -3,6 +3,7 @@ package com.lk.mall.orders.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -12,14 +13,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
 
+import com.lk.mall.orders.constant.RedisConstant;
 import com.lk.mall.orders.dao.IOrderItemDao;
 import com.lk.mall.orders.dao.IOrdersDao;
 import com.lk.mall.orders.model.OrderItem;
 import com.lk.mall.orders.model.Orders;
 import com.lk.mall.orders.model.vo.CornerMarkVO;
+import com.lk.mall.orders.model.vo.RankingListVO;
+import com.lk.mall.orders.model.vo.RankingListVO.Ranking;
 import com.lk.mall.orders.service.IShopQueryService;
+import com.lk.mall.orders.utils.RedisUtil;
 
 @Service
 public class ShopQueryServiceImpl implements IShopQueryService {
@@ -28,6 +34,8 @@ public class ShopQueryServiceImpl implements IShopQueryService {
     private IOrdersDao ordersDao;
     @Autowired
     private IOrderItemDao orderItemDao;
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
 	public CornerMarkVO findCornerMarkByShopId(Long shopId) {
@@ -116,5 +124,18 @@ public class ShopQueryServiceImpl implements IShopQueryService {
 		}
 		return ordersPage;
 	}
+
+    @Override
+    public Object findRankingList(Integer start, Integer end) {
+        Set<TypedTuple<Object>> reverseRange = redisUtil.reverseRange(RedisConstant.REDIS_PRODUCT_RANKING_LIST, start, end);
+        List<Ranking> rankingList = new ArrayList<>();
+        for (TypedTuple<Object> typedTuple : reverseRange) {
+            Ranking ranking = new Ranking();
+            ranking.setProductId(Long.parseLong(typedTuple.getValue().toString()));
+            ranking.setQuantity(typedTuple.getScore());
+            rankingList.add(ranking);
+        }
+        return new RankingListVO(rankingList);
+    }
 
 }
