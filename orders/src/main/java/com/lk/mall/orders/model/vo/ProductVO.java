@@ -23,7 +23,6 @@ public class ProductVO{
 	private String productName;
 	private String productSubtitle;
 	private String productImage;
-	private Integer productType;
 	private Integer stock;
 	
 }

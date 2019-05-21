@@ -18,7 +18,6 @@ public class ShopVO {
 	@NotNull(message="店铺id不能为空")
 	private Long shopId;
 	private String shopName;
-	private Integer shopType;
 	private BigDecimal shopMoney;
 	@Embedded
 	@NotEmpty(message = "商品明细不能为空")

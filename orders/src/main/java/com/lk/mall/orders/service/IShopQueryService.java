@@ -12,4 +12,6 @@ public interface IShopQueryService {
 	
 	Page<Orders> findOrderListByShopId(final Long shopId, final Integer status, Integer page, Integer size);
 	
+	Object findRankingList(Integer start, Integer end);
+	
 }
