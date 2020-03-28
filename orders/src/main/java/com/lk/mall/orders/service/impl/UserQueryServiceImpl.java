@@ -1,6 +1,7 @@
 package com.lk.mall.orders.service.impl;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -152,7 +153,7 @@ public class UserQueryServiceImpl implements IUserQueryService {
 			logger.info("orderItemDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
 			return orderItemDao.findByOrderId(orderId);
 		}, asyncServiceExecutor), (x, y) -> {//使用自己构造的线程池
-			x.setOrderItemList(y);
+			x.setOrderItemList(y.stream().sorted((c2, c1) -> c1.getId().compareTo(c2.getId())).collect(Collectors.toList()));//根据item id倒排
 			return x;
 		}).exceptionally(e -> {
 			System.err.println("该订单不存在:" + e.getMessage());
