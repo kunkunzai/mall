@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -38,6 +39,9 @@ public class UserQueryServiceImpl implements IUserQueryService {
 	private IOrdersDao ordersDao;
 	@Autowired
 	private IOrderItemDao orderItemDao;
+	
+	@Autowired
+	private Executor asyncServiceExecutor;
 	
     @Override
 	public CornerMarkVO findCornerMarkByUserId(Long userId) {
@@ -139,23 +143,15 @@ public class UserQueryServiceImpl implements IUserQueryService {
 
 	@Override
 	public Orders findOrderByOrderIdAsync(String orderId) {
-		long startTime=System.currentTimeMillis();   //获取开始时间
-		Orders orders = findOrder(orderId);
-		long endTime=System.currentTimeMillis(); //获取结束时间
-        System.out.println("多线程程序运行时间： "+(endTime-startTime)+"ms");  
-		return orders;
-	}
-	
-	@Async("asyncServiceExecutor")
-	public Orders findOrder(String orderId) {
+		long startTime = System.currentTimeMillis(); // 获取开始时间
 		Orders orders = null;
 		CompletableFuture<Orders> ordersFuture = CompletableFuture.supplyAsync(() -> {
-//			logger.info("ordersDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
+			logger.info("ordersDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
 			return ordersDao.findByOrderId(orderId);
-		}).thenCombine(CompletableFuture.supplyAsync(() -> {
-//			logger.info("orderItemDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
+		}, asyncServiceExecutor).thenCombine(CompletableFuture.supplyAsync(() -> {//使用自己构造的线程池
+			logger.info("orderItemDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
 			return orderItemDao.findByOrderId(orderId);
-		}), (x, y) -> {
+		}, asyncServiceExecutor), (x, y) -> {//使用自己构造的线程池
 			x.setOrderItemList(y);
 			return x;
 		}).exceptionally(e -> {
@@ -167,18 +163,20 @@ public class UserQueryServiceImpl implements IUserQueryService {
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			throw new OrderNotExistException(orderId);
 		}
+		long endTime = System.currentTimeMillis(); // 获取结束时间
+		System.out.println("多线程程序运行时间： " + (endTime - startTime) + "ms");
 		return orders;
 	}
 	
 	@Override
 	@Async("asyncServiceExecutor")
 	public void executeAsync(String sessionId) {
-		logger.info("start executeAsync:{}", sessionId);
+		logger.info("start executeAsync:{},{}", sessionId, Thread.currentThread().getId());
 		try {
 			Thread.sleep(5000);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		logger.info("end executeAsync:{}", sessionId);
+		logger.info("end executeAsync:{}", sessionId, Thread.currentThread().getId());
 	}
 }
