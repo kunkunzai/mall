@@ -1,5 +1,9 @@
 package com.lk.mall.orders.controller;
 
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +16,8 @@ import com.lk.mall.orders.service.IUserQueryService;
 
 @RestController
 public class UserQueryController {
+	
+	private static final Logger logger = LoggerFactory.getLogger(UserQueryController.class);
 
 	@Autowired
 	IUserQueryService userQueryService;
@@ -31,9 +37,25 @@ public class UserQueryController {
 		return userQueryService.findOrderListByUserId(userId, status, page, size);
 	}
 
+	@RequestMapping("/findOrderByOrderIdAsync")
+	public Orders findOrderByOrderIdAsync(@RequestParam("orderId") String orderId) {
+		return userQueryService.findOrderByOrderIdAsync(orderId);
+	}
+	
 	@RequestMapping("/findOrderByOrderId")
 	public Orders findOrderByOrderId(@RequestParam("orderId") String orderId) {
 		return userQueryService.findOrderByOrderId(orderId);
+	}
+	
+	@RequestMapping("/submit")
+	public String submit() {
+//		这个接口的log参见log，与application同路径
+		String sessionId = UUID.randomUUID().toString();//用uuid模仿不同的用户的sessionId
+		logger.info("start executeAsync:{}", sessionId);
+		// 调用service层的任务
+		userQueryService.executeAsync(sessionId);
+		logger.info("end submit:{}", sessionId);
+		return "success";
 	}
 
 }

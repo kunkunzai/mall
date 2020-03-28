@@ -5,17 +5,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.lk.mall.orders.Exception.OrderNotExistException;
 import com.lk.mall.orders.dao.IOrderItemDao;
@@ -27,6 +31,8 @@ import com.lk.mall.orders.service.IUserQueryService;
 
 @Service
 public class UserQueryServiceImpl implements IUserQueryService {
+	
+	private static final Logger logger = LoggerFactory.getLogger(UserQueryServiceImpl.class);
 
 	@Autowired
 	private IOrdersDao ordersDao;
@@ -122,24 +128,57 @@ public class UserQueryServiceImpl implements IUserQueryService {
 	}
 
 	@Override
-	@Transactional
 	public Orders findOrderByOrderId(String orderId) {
+		long startTime=System.currentTimeMillis();   //获取开始时间
+		Orders orders = ordersDao.findByOrderId(orderId);
+		orders.setOrderItemList(orderItemDao.findByOrderId(orderId));
+		long endTime=System.currentTimeMillis(); //获取结束时间
+        System.out.println("单线程程序运行时间： "+(endTime-startTime)+"ms");  
+		return orders;
+	}
+
+	@Override
+	public Orders findOrderByOrderIdAsync(String orderId) {
+		long startTime=System.currentTimeMillis();   //获取开始时间
+		Orders orders = findOrder(orderId);
+		long endTime=System.currentTimeMillis(); //获取结束时间
+        System.out.println("多线程程序运行时间： "+(endTime-startTime)+"ms");  
+		return orders;
+	}
+	
+	@Async("asyncServiceExecutor")
+	public Orders findOrder(String orderId) {
 		Orders orders = null;
-		CompletableFuture<List<OrderItem>> orderItemList = CompletableFuture
-				.supplyAsync(() -> orderItemDao.findByOrderId(orderId));
-		CompletableFuture<Orders> ordersFuture = CompletableFuture.supplyAsync(() -> ordersDao.findByOrderId(orderId))
-				.thenCombine(orderItemList, (x, y) -> {
-					x.setOrderItemList(y);
-					return x;
-				}).exceptionally(e -> {
-					System.err.println("该订单不存在:" + e.getMessage());
-					return null;
-				});
+		CompletableFuture<Orders> ordersFuture = CompletableFuture.supplyAsync(() -> {
+//			logger.info("ordersDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
+			return ordersDao.findByOrderId(orderId);
+		}).thenCombine(CompletableFuture.supplyAsync(() -> {
+//			logger.info("orderItemDao.findByOrderId,{},{}", orderId, Thread.currentThread().getId());
+			return orderItemDao.findByOrderId(orderId);
+		}), (x, y) -> {
+			x.setOrderItemList(y);
+			return x;
+		}).exceptionally(e -> {
+			System.err.println("该订单不存在:" + e.getMessage());
+			return null;
+		});
 		try {
-			orders = ordersFuture.get();
-		} catch (InterruptedException | ExecutionException e) {
+			orders = ordersFuture.get(5, TimeUnit.SECONDS);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			throw new OrderNotExistException(orderId);
 		}
 		return orders;
+	}
+	
+	@Override
+	@Async("asyncServiceExecutor")
+	public void executeAsync(String sessionId) {
+		logger.info("start executeAsync:{}", sessionId);
+		try {
+			Thread.sleep(5000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		logger.info("end executeAsync:{}", sessionId);
 	}
 }

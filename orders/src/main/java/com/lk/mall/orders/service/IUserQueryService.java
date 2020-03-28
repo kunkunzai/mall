@@ -16,6 +16,10 @@ public interface IUserQueryService {
 	
 	Page<Orders> findOrderListByUserId(final Long userId, final Integer status, final Integer page, final Integer size);
 	
+	Orders findOrderByOrderIdAsync(final String orderId);
+	
 	Orders findOrderByOrderId(final String orderId);
+	
+	void executeAsync(String sessionId);
 
 }
